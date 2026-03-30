@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Portafolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Reset básico y variables de diseño */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfdfd;
+            color: #1a1a1a;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Cabecera / Hero */
+        header {
+            padding: 120px 0 80px;
+        }
+        header h1 {
+            font-size: 2.8rem;
+            font-weight: 600;
+            letter-spacing: -1px;
+            margin-bottom: 15px;
+        }
+        header p {
+            font-size: 1.25rem;
+            color: #666;
+            font-weight: 300;
+            max-width: 600px;
+        }
+
+        /* Sección de Proyectos */
+        .projects {
+            padding: 40px 0;
+        }
+        .projects h2 {
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        .card {
+            background: #ffffff;
+            border: 1px solid #eaeaea;
+            padding: 30px;
+            border-radius: 8px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.04);
+        }
+        .card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .card p {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 25px;
+        }
+        .card a {
+            text-decoration: none;
+            color: #1a1a1a;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #1a1a1a;
+            padding-bottom: 2px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .card a:hover {
+            color: #888;
+            border-color: #888;
+        }
+
+        /* Footer */
+        footer {
+            padding: 80px 0 40px;
+            margin-top: 60px;
+            border-top: 1px solid #eaeaea;
+            color: #888;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .social-links a {
+            color: #1a1a1a;
+            text-decoration: none;
+            margin-left: 20px;
+            font-weight: 400;
+        }
+        .social-links a:hover {
+            color: #666;
+        }
+        
+        /* Adaptabilidad para móviles */
+        @media (max-width: 600px) {
+            header h1 { font-size: 2.2rem; }
+            footer { flex-direction: column; gap: 20px; text-align: center; }
+            .social-links a { margin: 0 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <header>
+            <h1>Hola, soy Mateo.</h1>
+            <p>Ingeniero. Construyendo desde España.</p>
+        </header>
+
+        <section class="projects">
+            <h2>Proyectos seleccionados</h2>
+            <div class="grid">
+                
+                <div class="card">
+                    <h3>Nombre del Proyecto 1</h3>
+                    <p>Una breve descripción de qué hace tu aplicación. Construido con HTML, CSS y JavaScript vainilla.</p>
+                    <a href="URL_DE_TU_REPOSITORIO" target="_blank">Ver código en GitHub ↗</a>
+                </div>
+
+                <div class="card">
+                    <h3>Nombre del Proyecto 2</h3>
+                    <p>Un bot para automatizar tareas. Integración con APIs externas y base de datos en Python.</p>
+                    <a href="URL_DE_TU_REPOSITORIO" target="_blank">Ver código en GitHub ↗</a>
+                </div>
+
+            </div>
+        </section>
+
+        <footer>
+            <div class="copyright">
+                © 2026 Mateo Gajic.
+            </div>
+            <div class="social-links">
+                <a href="mailto:tu-correo@email.com">Email</a>
+                <a href="URL_DE_TU_LINKEDIN" target="_blank">LinkedIn</a>
+                <a href="URL_DE_TU_GITHUB" target="_blank">GitHub</a>
+            </div>
+        </footer>
+
+    </div>
+</body>
+</html>
