@@ -4,14 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Portafolio</title>
+    <meta name="color-scheme" content="light dark">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* Reset básico y variables de diseño */
+        /* Definición de tu paleta de colores (Variables) */
+        /* Tema Claro (por defecto) */
+        :root {
+            --color-fondo: #FAFAFA;       /* Blanco muy suave, como papel */
+            --color-texto: #171717;       /* Gris carbón casi negro (más elegante que el negro puro) */
+            --color-secundario: #737373;  /* Gris neutro para no robar atención */
+            --color-tarjetas: #FFFFFF;    /* Blanco puro para que resalten sutilmente sobre el fondo */
+            --color-acento: #EA580C;      /* Un naranja quemado/ladrillo muy sofisticado */
+        }
+
+        /* Tema Oscuro (se activa al añadir la clase .dark-mode al body) */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-fondo: #121212;       /* Gris casi negro, da profundidad */
+                --color-texto: #EAEAEA;       /* Blanco roto, no quema los ojos */
+                --color-secundario: #888888;  /* Gris medio para textos descriptivos */
+                --color-tarjetas: #1A1A1A;    /* Un micropunto más claro que el fondo */
+                --color-acento: #3B82F6;      /* Azul eléctrico muy limpio y moderno */
+            }
+        }
+
+        /* Reset básico y diseño general */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #fdfdfd;
-            color: #1a1a1a;
+            background-color: var(--color-fondo);
+            color: var(--color-texto);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
         }
@@ -24,18 +46,111 @@
         /* Cabecera / Hero */
         header {
             padding: 120px 0 80px;
+            text-align: left;
+            position: relative; /* IMPORTANTE: Para que la luz se posicione respecto a la cabecera */
         }
+        
+        /* La magia del Glow ambiental */
+        .bg-glow {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: var(--color-acento); /* Usa tu amarillo */
+            filter: blur(130px); /* Un desenfoque masivo para que sea luz y no un círculo */
+            opacity: 0.35; /* Muy sutil */
+            top: -100px;
+            right: -100px; /* Lo colocamos en la esquina superior derecha */
+            z-index: -1; /* Lo mandamos al fondo, detrás del texto */
+            border-radius: 50%;
+        }
+        .bg-glow2 {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: var(--color-secundario); /* Usa tu amarillo */
+            filter: blur(130px); /* Un desenfoque masivo para que sea luz y no un círculo */
+            opacity: 0.25; /* Muy sutil */
+            top: 300px;
+            right: 800px; /* Lo colocamos en la esquina superior derecha */
+            z-index: -1; /* Lo mandamos al fondo, detrás del texto */
+            border-radius: 50%;
+        }
+        .bg-glow3 {
+            position: absolute;
+            width: 850px;
+            height: 450px;
+            background: var(--color-acento); /* Usa tu amarillo */
+            filter: blur(130px); /* Un desenfoque masivo para que sea luz y no un círculo */
+            opacity: 0.20; /* Muy sutil */
+            top: 600px;
+            right: 350px; /* Lo colocamos en la esquina superior derecha */
+            z-index: -1; /* Lo mandamos al fondo, detrás del texto */
+            border-radius: 50%;
+        }
+        /* Efecto Desmontar Letras */
+        .levitar {
+            display: inline-block;
+            color: var(--color-texto);
+            font-weight: 800;
+        }
+        .levitar span {
+            display: inline-block; /* Vital para que cada letra se pueda mover */
+            transition: transform 0.1s ease-out;
+            will-change: transform;
+        }
+        
+        /* Tu logotipo CSS actualizado al color de acento */
+        .logo {
+            display: inline-block;
+            background-color: var(--color-acento); 
+            color: var(--color-texto); /* Texto oscuro sobre fondo amarillo para máximo contraste */
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            text-align: center;        
+            line-height: 60px;
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -1px;
+            margin-bottom: 25px;
+            box-shadow: 4px 4px 0px rgba(69, 71, 75, 0.1); /* Sombra suave del color del texto */
+        }
+
         header h1 {
             font-size: 2.8rem;
-            font-weight: 600;
+            font-weight: 800;
             letter-spacing: -1px;
             margin-bottom: 15px;
         }
         header p {
             font-size: 1.25rem;
-            color: #666;
-            font-weight: 300;
-            max-width: 100%;
+            color: var(--color-texto); /* Usamos el verde elegante para el texto descriptivo */
+            font-weight: 400;
+            max-width: 800px; /* Biografía más ancha */
+        }
+
+        /* Etiquetas de Habilidades (Skills) */
+        .skills-container {
+            margin-top: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .skill-tag {
+            background-color: var(--color-tarjetas);
+            color: var(--color-texto);
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(73, 94, 87, 0.2);
+            transition: all 0.2s ease;
+        }
+        .skill-tag:hover {
+            background-color: var(--color-acento); /* Al pasar el ratón */
+            color: var(--color-fondo);
+            transform: translateY(-2px);
+            box-shadow: 0px 2px 5px var(--color-acento);
         }
 
         /* Sección de Proyectos */
@@ -45,7 +160,7 @@
         .projects h2 {
             font-size: 1.5rem;
             margin-bottom: 40px;
-            font-weight: 600;
+            font-weight: 800;
             letter-spacing: -0.5px;
         }
         .grid {
@@ -54,59 +169,63 @@
             gap: 30px;
         }
         .card {
-            background: #ffffff;
-            border: 1px solid #eaeaea;
+            background: var(--color-tarjetas);
+            border: 1px solid rgba(69, 71, 75, 0.1);
             padding: 30px;
-            border-radius: 8px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-radius: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
+        
         .card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.04);
+            /* Aquí cambiamos la sombra gris por un glow amarillo sutil */
+            box-shadow: 0 0 30px var(--color-acento); 
+            border-color: var(--color-acento); 
         }
         .card h3 {
             font-size: 1.2rem;
             margin-bottom: 10px;
-            font-weight: 600;
+            font-weight: 800;
         }
         .card p {
             font-size: 0.95rem;
-            color: #666;
+            color: var(--color-texto);
             margin-bottom: 25px;
         }
         .card a {
             text-decoration: none;
-            color: #1a1a1a;
+            color: var(--color-texto);
             font-weight: 600;
             font-size: 0.9rem;
-            border-bottom: 1px solid #1a1a1a;
+            border-bottom: 2px solid var(--color-acento); /* Subrayado amarillo */
             padding-bottom: 2px;
-            transition: color 0.2s, border-color 0.2s;
+            transition: all 0.2s;
         }
         .card a:hover {
-            color: #888;
-            border-color: #888;
+            background-color: var(--color-acento);
+            color: var(--color-texto);
         }
 
         /* Footer */
         footer {
             padding: 80px 0 40px;
             margin-top: 60px;
-            border-top: 1px solid #eaeaea;
-            color: #888;
+            border-top: 1px solid rgba(69, 71, 75, 0.1);
+            color: var(--color-texto);
             font-size: 0.9rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .social-links a {
-            color: #1a1a1a;
+            color: var(--color-texto);
             text-decoration: none;
             margin-left: 20px;
-            font-weight: 400;
+            font-weight: 600;
+            transition: color 0.2s;
         }
         .social-links a:hover {
-            color: #666;
+            color: var(--color-acento);
         }
         
         /* Adaptabilidad para móviles */
@@ -121,12 +240,22 @@
     <div class="container">
         
         <header>
-            <h1>Hola, soy Mateo.</h1>
+            <div class="bg-glow"></div>
+            <div class="bg-glow2"></div>
+            <h1>Hola, soy <span class=levitar>Mateo.</span></h1>
             <p>Ingeniero físico al que le gusta crear soluciones. Vengo del mundo de la fotónica, la nanotecnología y la física de 
                 aceleradores. Ahora estoy expandiendo mis habilidades hacia programación un poco más en seria.</p>
+            <div class="skills-container">
+                <span class="skill-tag">Python</span>
+                <span class="skill-tag">HTML & CSS</span>
+                <span class="skill-tag">Git / GitHub</span>
+                <span class="skill-tag">Análisis de Datos</span>
+                <span class="skill-tag">Resolución de Problemas</span>
+            </div>
         </header>
 
         <section class="projects">
+            <div class="bg-glow3"></div>
             <h2>Proyectos seleccionados</h2>
             <div class="grid">
                 
@@ -160,5 +289,48 @@
         </footer>
 
     </div>
+    <script>
+        // 1. Buscamos la palabra
+        const contenedorPalabra = document.querySelector('.levitar');
+        
+        if (contenedorPalabra) {
+            // Guardamos el texto original ("Mateo.")
+            const texto = contenedorPalabra.textContent;
+            // Vaciamos el contenedor
+            contenedorPalabra.textContent = '';
+            
+            // 2. Bucle para separar la palabra en letras
+            for (let i = 0; i < texto.length; i++) {
+                let letra = document.createElement('span');
+                letra.textContent = texto[i];
+                contenedorPalabra.appendChild(letra);
+            }
+
+            // 3. Seleccionamos todas las letras nuevas que acabamos de crear
+            const letras = contenedorPalabra.querySelectorAll('span');
+            
+            // 4. Activamos el motor de scroll
+            window.addEventListener('scroll', function() {
+                let scrollY = window.scrollY;
+                
+                letras.forEach((letra, index) => {
+                    // Matemáticas del efecto:
+                    // Hacemos que la velocidad dependa de la posición de la letra (index).
+                    // Las primeras letras van más lentas, las últimas más rápidas.
+                    let velocidadY = 0.1 + (index * 0.05); 
+                    
+                    // Hacemos que las letras pares giren a la derecha y las impares a la izquierda
+                    let direccionGiro = index % 2 === 0 ? 1 : -1;
+                    let rotacion = scrollY * 0.05 * direccionGiro;
+                    
+                    // Empujamos un poquito las letras hacia los lados para que se "desmonte"
+                    let separacionX = scrollY * 0.02 * direccionGiro;
+
+                    // Aplicamos la física a la letra
+                    letra.style.transform = `translate(${separacionX}px, -${scrollY * velocidadY}px) rotate(${rotacion}deg)`;
+                });
+            });
+        }
+    </script>
 </body>
 </html>
