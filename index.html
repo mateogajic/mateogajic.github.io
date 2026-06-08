@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tu Nombre — Ingeniero Físico</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #080808;
+      --bg2:      #0f0f0f;
+      --bg3:      #141414;
+      --line:     #222222;
+      --muted:    #444444;
+      --text:     #e8e4dc;
+      --text2:    #9a9690;
+      --accent:   #d4ff00;
+      --accent2:  #ff4d1c;
+      --font-head: 'Bebas Neue', sans-serif;
+      --font-body: 'Syne', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      cursor: crosshair;
+      overflow-x: hidden;
+    }
+
+    /* ── CUSTOM CURSOR ── */
+    .cursor {
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.15s ease;
+      mix-blend-mode: difference;
+    }
+    .cursor-ring {
+      width: 36px; height: 36px;
+      border: 1px solid rgba(212,255,0,0.4);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none;
+      z-index: 9998;
+      transition: transform 0.08s linear, width 0.2s, height 0.2s;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; width: 100%;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.5rem 3rem;
+      z-index: 100;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    nav.scrolled {
+      border-color: var(--line);
+      background: rgba(8,8,8,0.92);
+      backdrop-filter: blur(12px);
+    }
+    .nav-logo {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: var(--text2);
+      text-transform: uppercase;
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+    .nav-links a {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      color: var(--text2);
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 0 3rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.35;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 100%, black 30%, transparent 100%);
+    }
+    .hero-noise {
+      position: absolute; inset: 0;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-size: 200px;
+    }
+    .hero-badge {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      animation: fadeUp 0.8s 0.2s both;
+    }
+    .hero-badge::before {
+      content: '';
+      display: block; width: 2rem; height: 1px;
+      background: var(--accent);
+    }
+    .hero-title {
+      font-family: var(--font-head);
+      font-size: clamp(5rem, 14vw, 14rem);
+      line-height: 0.88;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.9s 0.35s both;
+    }
+    .hero-title .accent { color: var(--accent); }
+    .hero-title .stroke {
+      -webkit-text-stroke: 1px var(--muted);
+      color: transparent;
+    }
+    .hero-sub {
+      max-width: 520px;
+      font-size: 1rem;
+      color: var(--text2);
+      line-height: 1.7;
+      animation: fadeUp 0.9s 0.5s both;
+    }
+    .hero-bottom {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-top: 3.5rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--line);
+      animation: fadeUp 0.9s 0.65s both;
+    }
+    .hero-stats { display: flex; gap: 3rem; }
+    .stat-item { display: flex; flex-direction: column; gap: 0.2rem; }
+    .stat-num {
+      font-family: var(--font-head);
+      font-size: 2.2rem;
+      line-height: 1;
+      color: var(--text);
+    }
+    .stat-label {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      color: var(--text2);
+      text-transform: uppercase;
+    }
+    .hero-cta {
+      display: flex; align-items: center; gap: 1rem;
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      color: var(--text);
+      text-transform: uppercase;
+      border: 1px solid var(--line);
+      padding: 0.9rem 1.8rem;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .hero-cta:hover {
+      border-color: var(--accent);
+      color: var(--bg);
+      background: var(--accent);
+    }
+    .hero-cta::after {
+      content: '↓';
+      font-size: 1rem;
+    }
+
+    /* ── MARQUEE ── */
+    .marquee-wrap {
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 0.9rem 0;
+      overflow: hidden;
+      background: var(--bg2);
+    }
+    .marquee-track {
+      display: flex; gap: 0;
+      animation: marquee 20s linear infinite;
+      white-space: nowrap;
+    }
+    .marquee-item {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      color: var(--text2);
+      text-transform: uppercase;
+      padding: 0 2.5rem;
+      border-right: 1px solid var(--line);
+    }
+    .marquee-item.hi { color: var(--accent); }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* ── SECTIONS SHARED ── */
+    section { padding: 7rem 3rem; }
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 3.5rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .section-label::before {
+      content: '';
+      display: block; width: 1.5rem; height: 1px;
+      background: var(--accent);
+    }
+
+    /* ── PROJECTS ── */
+    #projects { background: var(--bg2); }
+    .projects-header {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-bottom: 3.5rem;
+    }
+    .section-title {
+      font-family: var(--font-head);
+      font-size: clamp(2.5rem, 6vw, 5.5rem);
+      line-height: 0.95;
+      letter-spacing: 0.01em;
+    }
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 1.5px;
+    }
+    .project-card {
+      background: var(--bg3);
+      padding: 2.5rem;
+      cursor: pointer;
+      transition: background 0.25s;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+    .project-card:hover { background: #1a1a1a; }
+    .project-card:hover .card-arrow { transform: translateX(4px) translateY(-4px); }
+    .project-card.large { grid-column: span 7; }
+    .project-card.small { grid-column: span 5; }
+    .project-card.full  { grid-column: span 12; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: end; }
+    .card-tag {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      color: var(--text2);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .card-tag::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .card-num {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--muted);
+      position: absolute;
+      top: 1.5rem; right: 1.5rem;
+    }
+    .card-title {
+      font-family: var(--font-head);
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      line-height: 1;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+    .card-desc {
+      font-size: 0.85rem;
+      color: var(--text2);
+      line-height: 1.65;
+      max-width: 380px;
+    }
+    .card-arrow {
+      position: absolute;
+      bottom: 2rem; right: 2rem;
+      font-size: 1.3rem;
+      color: var(--text2);
+      transition: transform 0.2s;
+    }
+    .card-tech {
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+    .tech-pill {
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      color: var(--text2);
+      border: 1px solid var(--line);
+      padding: 0.3rem 0.65rem;
+      text-transform: uppercase;
+    }
+    .card-visual {
+      height: 180px;
+      background: var(--line);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-head);
+      font-size: 4rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      border: 1px solid var(--line);
+    }
+    .card-visual.accent-bg {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    /* ── ABOUT ── */
+    #about { background: var(--bg); }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6rem;
+      align-items: start;
+    }
+    .about-title {
+      font-family: var(--font-head);
+      font-size: clamp(3rem, 6vw, 5.5rem);
+      line-height: 0.93;
+      margin-bottom: 2.5rem;
+    }
+    .about-title .outline {
+      -webkit-text-stroke: 1px var(--muted);
+      color: transparent;
+    }
+    .about-text {
+      font-size: 0.95rem;
+      color: var(--text2);
+      line-height: 1.8;
+      margin-bottom: 1.5rem;
+    }
+    .about-right { padding-top: 1rem; }
+    .skills-block { margin-bottom: 3rem; }
+    .skills-block-title {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .skills-list {
+      display: flex; flex-direction: column; gap: 0.6rem;
+    }
+    .skill-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text2);
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--line);
+      transition: color 0.2s;
+    }
+    .skill-row:hover { color: var(--text); }
+    .skill-bar-wrap {
+      width: 100px; height: 2px;
+      background: var(--line);
+      position: relative;
+    }
+    .skill-bar {
+      position: absolute; left: 0; top: 0;
+      height: 100%;
+      background: var(--accent);
+      transform-origin: left;
+      animation: barGrow 1s ease-out both;
+    }
+    @keyframes barGrow {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
+
+    /* ── CONTACT ── */
+    #contact {
+      background: var(--bg2);
+      border-top: 1px solid var(--line);
+    }
+    .contact-inner {
+      max-width: 700px;
+    }
+    .contact-title {
+      font-family: var(--font-head);
+      font-size: clamp(3.5rem, 8vw, 7rem);
+      line-height: 0.9;
+      margin-bottom: 2rem;
+    }
+    .contact-title .hi { color: var(--accent); }
+    .contact-sub {
+      font-size: 0.95rem;
+      color: var(--text2);
+      line-height: 1.7;
+      max-width: 450px;
+      margin-bottom: 3rem;
+    }
+    .contact-links { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .contact-link {
+      display: flex; align-items: center; gap: 0.8rem;
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      color: var(--text);
+      text-transform: uppercase;
+      border: 1px solid var(--line);
+      padding: 1rem 1.6rem;
+      transition: all 0.2s;
+    }
+    .contact-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .contact-link .icon { font-size: 1rem; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 2rem 3rem;
+      border-top: 1px solid var(--line);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .footer-copy {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .footer-coords {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 1.2rem 1.5rem; }
+      .nav-links { display: none; }
+      #hero { padding: 0 1.5rem 3rem; }
+      section { padding: 5rem 1.5rem; }
+      .about-grid { grid-template-columns: 1fr; gap: 3rem; }
+      .hero-stats { gap: 1.5rem; }
+      .hero-bottom { flex-direction: column; align-items: flex-start; gap: 2rem; }
+      .project-card.large,
+      .project-card.small,
+      .project-card.full { grid-column: span 12; }
+      .project-card.full { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 0.5rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CURSOR -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <div class="nav-logo">TU<span>.</span>NOMBRE</div>
+    <ul class="nav-links">
+      <li><a href="#projects">Proyectos</a></li>
+      <li><a href="#about">Sobre mí</a></li>
+      <li><a href="#contact">Contacto</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-noise"></div>
+    <div class="hero-badge">Ing. Físico — Disponible para proyectos</div>
+    <h1 class="hero-title">
+      TU<br>
+      <span class="accent">NOMBRE</span><br>
+      <span class="stroke">AQUÍ</span>
+    </h1>
+    <p class="hero-sub">
+      Donde la física se convierte en tecnología. Construyo soluciones
+      en la intersección de la ciencia computacional, el hardware y los datos —
+      del laboratorio al mundo real.
+    </p>
+    <div class="hero-bottom">
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-num">6+</span>
+          <span class="stat-label">Proyectos</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">3</span>
+          <span class="stat-label">Áreas</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">∞</span>
+          <span class="stat-label">Curiosidad</span>
+        </div>
+      </div>
+      <a href="#projects" class="hero-cta">Ver trabajo</a>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee-wrap">
+    <div class="marquee-track">
+      <span class="marquee-item hi">Ingeniería Física</span>
+      <span class="marquee-item">Python · C++ · MATLAB</span>
+      <span class="marquee-item hi">Simulación Computacional</span>
+      <span class="marquee-item">Física de Materiales</span>
+      <span class="marquee-item hi">Machine Learning</span>
+      <span class="marquee-item">Análisis de Datos</span>
+      <span class="marquee-item hi">Instrumentación</span>
+      <span class="marquee-item">LaTeX · Git · Linux</span>
+      <!-- duplicate for seamless loop -->
+      <span class="marquee-item hi">Ingeniería Física</span>
+      <span class="marquee-item">Python · C++ · MATLAB</span>
+      <span class="marquee-item hi">Simulación Computacional</span>
+      <span class="marquee-item">Física de Materiales</span>
+      <span class="marquee-item hi">Machine Learning</span>
+      <span class="marquee-item">Análisis de Datos</span>
+      <span class="marquee-item hi">Instrumentación</span>
+      <span class="marquee-item">LaTeX · Git · Linux</span>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="section-label">Trabajo seleccionado</div>
+    <div class="projects-header reveal">
+      <h2 class="section-title">PROYEC-<br>TOS</h2>
+    </div>
+    <div class="projects-grid">
+
+      <div class="project-card large reveal">
+        <span class="card-num">01</span>
+        <div class="card-tag">Simulación · Python</div>
+        <h3 class="card-title">PROYECTO DESTACADO UNO</h3>
+        <p class="card-desc">Describe aquí brevemente el proyecto: qué problema resuelve, qué técnicas usaste, qué aprendiste. Una o dos frases contundentes.</p>
+        <div class="card-tech">
+          <span class="tech-pill">Python</span>
+          <span class="tech-pill">NumPy</span>
+          <span class="tech-pill">Matplotlib</span>
+        </div>
+        <span class="card-arrow">↗</span>
+      </div>
+
+      <div class="project-card small reveal" style="transition-delay:0.1s">
+        <span class="card-num">02</span>
+        <div class="card-visual accent-bg">FIS</div>
+        <div style="margin-top:1.5rem">
+          <div class="card-tag">Hardware · Electrónica</div>
+          <h3 class="card-title">PROYECTO DOS</h3>
+          <p class="card-desc">Descripción breve del segundo proyecto.</p>
+        </div>
+        <span class="card-arrow">↗</span>
+      </div>
+
+      <div class="project-card full reveal" style="transition-delay:0.15s">
+        <div>
+          <span class="card-num">03</span>
+          <div class="card-tag">Data Science · ML</div>
+          <h3 class="card-title">PROYECTO TRES — EL MÁS AMPLIO</h3>
+          <p class="card-desc">Proyecto más complejo donde uses machine learning, análisis de datos o modelado estadístico. Menciona los resultados concretos que obtuviste.</p>
+          <div class="card-tech">
+            <span class="tech-pill">Scikit-learn</span>
+            <span class="tech-pill">Pandas</span>
+            <span class="tech-pill">MATLAB</span>
+            <span class="tech-pill">Git</span>
+          </div>
+        </div>
+        <div class="card-visual">03</div>
+        <span class="card-arrow">↗</span>
+      </div>
+
+      <div class="project-card small reveal" style="transition-delay:0.2s">
+        <span class="card-num">04</span>
+        <div class="card-tag">Óptica · Lab</div>
+        <h3 class="card-title">PROYECTO CUATRO</h3>
+        <p class="card-desc">Experimento o trabajo de laboratorio destacado.</p>
+        <div class="card-tech">
+          <span class="tech-pill">Instrumentación</span>
+          <span class="tech-pill">C++</span>
+        </div>
+        <span class="card-arrow">↗</span>
+      </div>
+
+      <div class="project-card large reveal" style="transition-delay:0.25s">
+        <span class="card-num">05</span>
+        <div class="card-tag">Investigación · Tesis</div>
+        <h3 class="card-title">TRABAJO DE TESIS / INVESTIGACIÓN</h3>
+        <p class="card-desc">Tu proyecto de tesis o trabajo de investigación más relevante. El que mejor te representa académicamente.</p>
+        <div class="card-tech">
+          <span class="tech-pill">LaTeX</span>
+          <span class="tech-pill">Python</span>
+          <span class="tech-pill">COMSOL</span>
+        </div>
+        <span class="card-arrow">↗</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="section-label">Sobre mí</div>
+    <div class="about-grid">
+      <div>
+        <h2 class="about-title">
+          MENTE<br>
+          <span class="outline">ANALÍ-</span><br>
+          TICA
+        </h2>
+        <p class="about-text">
+          Soy estudiante de ingeniería física en [tu universidad], apasionado por entender cómo funciona el universo y convertir ese entendimiento en tecnología útil.
+        </p>
+        <p class="about-text">
+          Mi formación me ha dado una base sólida en modelado matemático, simulación numérica y diseño experimental — herramientas que aplico tanto en el laboratorio como frente a un dataset complejo.
+        </p>
+        <p class="about-text">
+          Cuando no estoy en clase o en el lab, estoy leyendo sobre física teórica, contribuyendo a proyectos open source o aprendiendo algo nuevo que no tiene nada que ver con lo anterior.
+        </p>
+      </div>
+      <div class="about-right">
+        <div class="skills-block">
+          <div class="skills-block-title">Lenguajes & herramientas</div>
+          <div class="skills-list">
+            <div class="skill-row">
+              Python
+              <div class="skill-bar-wrap"><div class="skill-bar" style="width:90%"></div></div>
+            </div>
+            <div class="skill-row">
+              MATLAB
+              <div class="skill-bar-wrap"><div class="skill-bar" style="width:80%"></div></div>
+            </div>
+            <div class="skill-row">
+              C / C++
+              <div class="skill-bar-wrap"><div class="skill-bar" style="width:65%"></div></div>
+            </div>
+            <div class="skill-row">
+              LaTeX
+              <div class="skill-bar-wrap"><div class="skill-bar" style="width:85%"></div></div>
+            </div>
+            <div class="skill-row">
+              Git / Linux
+              <div class="skill-bar-wrap"><div class="skill-bar" style="width:70%"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="skills-block">
+          <div class="skills-block-title">Áreas de enfoque</div>
+          <div class="skills-list">
+            <div class="skill-row">Simulación computacional <span>›</span></div>
+            <div class="skill-row">Física de materiales <span>›</span></div>
+            <div class="skill-row">Machine learning aplicado <span>›</span></div>
+            <div class="skill-row">Instrumentación electrónica <span>›</span></div>
+            <div class="skill-row">Análisis estadístico <span>›</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="contact-inner">
+      <div class="section-label">Contacto</div>
+      <h2 class="contact-title">
+        HABLE-<br>
+        <span class="hi">MOS.</span>
+      </h2>
+      <p class="contact-sub">
+        Abierto a colaboraciones, prácticas profesionales y proyectos interesantes. Si trabajas en la intersección de física, datos o tecnología — hablemos.
+      </p>
+      <div class="contact-links">
+        <a href="mailto:tu@email.com" class="contact-link">
+          <span class="icon">✉</span> Email
+        </a>
+        <a href="https://linkedin.com/in/tuperfil" target="_blank" class="contact-link">
+          <span class="icon">in</span> LinkedIn
+        </a>
+        <a href="https://github.com/tuperfil" target="_blank" class="contact-link">
+          <span class="icon">⌥</span> GitHub
+        </a>
+        <a href="cv.pdf" class="contact-link">
+          <span class="icon">↓</span> Descargar CV
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-copy">© 2025 Tu Nombre — Ing. Físico</span>
+    <span class="footer-coords">Diseñado y construido a mano</span>
+  </footer>
+
+  <script>
+    // CURSOR
+    const cursor = document.getElementById('cursor');
+    const ring   = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    function animCursor() {
+      cursor.style.transform = `translate(${mx - 5}px, ${my - 5}px)`;
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      ring.style.transform = `translate(${rx - 18}px, ${ry - 18}px)`;
+      requestAnimationFrame(animCursor);
+    }
+    animCursor();
+    document.querySelectorAll('a, button, .project-card').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        ring.style.width  = '60px';
+        ring.style.height = '60px';
+        ring.style.marginLeft = '-12px';
+        ring.style.marginTop  = '-12px';
+      });
+      el.addEventListener('mouseleave', () => {
+        ring.style.width  = '36px';
+        ring.style.height = '36px';
+        ring.style.marginLeft = '0';
+        ring.style.marginTop  = '0';
+      });
+    });
+
+    // NAV SCROLL
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 60);
+    });
+
+    // REVEAL ON SCROLL
+    const reveals = document.querySelectorAll('.reveal');
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    reveals.forEach(el => obs.observe(el));
+  </script>
+</body>
+</html>
