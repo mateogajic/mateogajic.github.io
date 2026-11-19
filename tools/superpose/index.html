@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Superpose: an interactive qubit simulator in the browser. Prepare states on the Bloch sphere, apply quantum gates, measure with real collapse, and export to Qiskit.">
+<meta name="theme-color" content="#ebebeb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0c0c" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'%3E%3Crect width='34' height='34' fill='%23e5251b'/%3E%3Ccircle cx='17' cy='17' r='10' fill='none' stroke='%23fff' stroke-width='1.8'/%3E%3Cline x1='17' y1='17' x2='23.5' y2='9.5' stroke='%23fff' stroke-width='2.2'/%3E%3Crect x='21.6' y='7.6' width='4' height='4' fill='%23fff'/%3E%3C/svg%3E">
+<title>Superpose</title>
+<link rel="canonical" href="https://mateogajic.github.io/tools/superpose/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<style>
+/* portfolio link (added for mateogajic.github.io) */
+a.btn{display:inline-flex;align-items:center;text-decoration:none}
+/* Layout: Superpose — technical drafting grid. A framed sheet split by 1px rules: top bar, wordmark band, then
+   a control column (prepare · gates · measure) beside the instruments (circuit · Bloch spheres · state vector).
+   Monochrome greys and black, signal red as the only accent. */
+:root{
+  --bg:#ebebeb; --surface:#f6f6f6; --sunk:#e3e3e3; --ink:#111111; --muted:#6c6c6c;
+  --line:#cdcdcd; --line-strong:#acacac; --grid:#dadada; --wire:#9d9d9d;
+  --accent:#e5251b; --accent-hi:#c41b12; --accent-soft:#f6d3cf; --on-accent:#ffffff;
+  --panel:#0e0e0e; --panel-edge:#0e0e0e; --panel-ink:#f1f1f1; --panel-muted:#8a8a8a; --panel-line:#4b4b4b;
+  --meas:var(--accent); --meas-soft:var(--accent-soft);
+  --f-display:"Major Mono Display", "JetBrains Mono", ui-monospace, monospace;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --cut:9px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c0c0c; --surface:#151515; --sunk:#1b1b1b; --ink:#ececec; --muted:#8b8b8b;
+  --line:#262626; --line-strong:#3c3c3c; --grid:#1d1d1d; --wire:#4f4f4f;
+  --accent:#ff3a2d; --accent-hi:#ff5a4f; --accent-soft:#2d1310; --on-accent:#ffffff;
+  --panel:#000000; --panel-edge:#2c2c2c; --panel-ink:#ededed; --panel-muted:#858585; --panel-line:#424242; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c0c0c; --surface:#151515; --sunk:#1b1b1b; --ink:#ececec; --muted:#8b8b8b;
+  --line:#262626; --line-strong:#3c3c3c; --grid:#1d1d1d; --wire:#4f4f4f;
+  --accent:#ff3a2d; --accent-hi:#ff5a4f; --accent-soft:#2d1310; --on-accent:#ffffff;
+  --panel:#000000; --panel-edge:#2c2c2c; --panel-ink:#ededed; --panel-muted:#858585; --panel-line:#424242; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-mono);font-size:13px;line-height:1.55;padding-inline:16px;padding-block:16px 40px}
+::selection{background:var(--accent);color:var(--on-accent)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:var(--f-mono);font-size:.95em;background:var(--sunk);padding:0 4px}
+
+/* ---------- frame ---------- */
+.wrap{max-width:1440px;margin:0 auto;border:1px solid var(--line);background:var(--line);display:grid;gap:1px}
+.wrap>*{background:var(--bg)}
+
+/* top bar */
+.top{display:grid;grid-template-columns:auto minmax(0,1fr);gap:1px;background:var(--line)}
+.top>*{background:var(--bg)}
+.brand{display:flex;align-items:center;gap:12px;padding:12px 22px 12px 16px;min-width:0}
+.brand svg{width:34px;height:34px;flex:none}
+.brand b{display:block;font-weight:700;font-size:15px;letter-spacing:.01em;line-height:1.1}
+.brand small{display:block;font-size:10px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;padding:12px 16px}
+
+/* hero: wordmark cell beside the description cell */
+.hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:1px;background:var(--line)}
+.hero>div{background:var(--bg);min-width:0}
+.hero-main{padding:30px 30px 22px;background:repeating-linear-gradient(90deg,var(--line) 0 1px,transparent 1px 25%) var(--bg)!important;display:flex;flex-direction:column;justify-content:space-between;gap:22px}
+.hero h1{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(38px,6vw,80px);line-height:1;letter-spacing:.01em;color:var(--ink)}
+.hero h1 span{color:var(--accent)}
+.verbs{display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;text-transform:uppercase;letter-spacing:.08em;font-size:12px}
+.verbs i{width:9px;height:9px;background:var(--accent);display:inline-block}
+.hero-side{padding:30px 26px 22px;display:flex;flex-direction:column;justify-content:space-between;gap:22px}
+.hero .sub{margin:0;font-size:13px;max-width:52ch}
+.spec{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.spec span::before{content:"/ ";color:var(--line-strong)}
+.sq{position:absolute;width:9px;height:9px;background:var(--accent);z-index:1}
+.sq.tl{left:11px;top:11px}.sq.br{right:11px;bottom:11px}
+@media (max-width:960px){.hero{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- controls ---------- */
+.btn,.stepper,select,input[type=number],textarea{border:1px solid var(--line-strong);background:var(--surface);border-radius:0}
+.btn{height:36px;padding:0 14px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);transition:background .12s,color .12s,border-color .12s}
+.btn:hover:not(:disabled){background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.primary,.btn.meas{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
+  clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));padding:0 20px}
+.btn.primary:hover:not(:disabled),.btn.meas:hover:not(:disabled){background:var(--accent-hi);border-color:var(--accent-hi);color:var(--on-accent)}
+.btn.primary:focus-visible,.btn.meas:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--ink)}
+.btn.meas-ghost{border-color:var(--accent);color:var(--accent);background:transparent}
+.btn.meas-ghost:hover:not(:disabled){background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.themebtn{width:36px;padding:0;display:grid;place-items:center}
+.themebtn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.stepper{display:flex;align-items:center;height:36px}
+.stepper button{border:0;background:none;width:34px;height:34px;font-size:17px;cursor:pointer}
+.stepper button:hover:not(:disabled){background:var(--ink);color:var(--bg)}
+.stepper button:disabled{opacity:.3;cursor:default}
+.stepper output{min-width:92px;text-align:center;font-size:12px;letter-spacing:.06em;text-transform:uppercase;border-inline:1px solid var(--line);line-height:34px}
+select{appearance:none;-webkit-appearance:none;height:36px;padding:0 34px 0 12px;font-size:12px;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);
+  background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+#ex{min-width:200px;text-transform:uppercase;letter-spacing:.05em}
+input[type=number]{height:32px;padding:0 8px;width:84px;font-size:12px}
+input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;margin:0}
+textarea{width:100%;min-height:104px;font-size:12px;padding:10px;resize:vertical;margin:10px 0}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:18px;background:transparent;cursor:pointer;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:1px;background:var(--line-strong)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;margin-top:-5px;background:var(--accent);border:0;border-radius:0}
+input[type=range]::-moz-range-track{height:1px;background:var(--line-strong)}
+input[type=range]::-moz-range-progress{height:1px;background:var(--accent)}
+input[type=range]::-moz-range-thumb{width:11px;height:11px;background:var(--accent);border:0;border-radius:0}
+
+/* ---------- layout ---------- */
+.grid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:1px;background:var(--line)}
+@media (max-width:960px){.grid{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:1px;background:var(--line);min-width:0}
+.col>section:last-child{flex:1}
+section{background:var(--bg);padding:20px 22px 22px;min-width:0}
+h2{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin:0 0 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+h2::before{content:"";width:9px;height:9px;background:var(--accent);flex:none}
+h2 .ix{color:var(--muted);font-weight:500}
+h2 small{margin-left:auto;font-size:11px;letter-spacing:.06em;color:var(--muted);font-weight:400;text-transform:none}
+.lbl{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.hint{font-size:12px;color:var(--muted);margin:6px 0}
+.msg{font-size:12px;margin-top:8px}
+.msg.err{color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* prepare */
+.qinit{display:grid;gap:8px;padding:14px 0;border-top:1px dashed var(--line-strong)}
+.qinit:first-of-type{border-top:0;padding-top:0}
+.qhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.qname{font-weight:700;font-size:13px}
+.qamp{font-size:11.5px;color:var(--muted);text-align:right}
+.presets{display:flex;flex-wrap:wrap;gap:0}
+.presets button{font-size:12px;border:1px solid var(--line-strong);background:var(--surface);padding:4px 9px;cursor:pointer;margin:0 -1px -1px 0}
+.presets button:hover{border-color:var(--ink);position:relative}
+.presets button.on{background:var(--ink);color:var(--bg);border-color:var(--ink);position:relative}
+.slider{display:grid;grid-template-columns:18px minmax(0,1fr) 56px;gap:10px;align-items:center;font-size:12px}
+.slider output{text-align:right;color:var(--muted)}
+details{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+summary{cursor:pointer;font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;list-style:none;display:flex;align-items:center;gap:8px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";display:inline-grid;place-items:center;width:16px;height:16px;border:1px solid var(--line-strong);font-size:12px;line-height:1}
+details[open]>summary::before{content:"−"}
+
+/* gates */
+.sel{display:grid;gap:8px;margin-bottom:18px}
+.chips{display:flex;flex-wrap:wrap;gap:0;align-items:center}
+.chips .lbl{width:84px}
+.chip{font-size:12px;border:1px solid var(--line-strong);background:var(--surface);padding:3px 11px;cursor:pointer;margin-right:-1px}
+.chip:hover{border-color:var(--ink);position:relative}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink);position:relative}
+.gates{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:0;margin:8px 0 18px;padding:1px 0 0 1px}
+.gate{height:52px;border:1px solid var(--line-strong);margin:-1px 0 0 -1px;background:var(--surface);font-weight:600;font-size:15px;cursor:pointer;position:relative;transition:background .1s,color .1s}
+.gate:hover:not(:disabled){background:var(--ink);color:var(--bg);border-color:var(--ink);z-index:1}
+.gate:active:not(:disabled){background:var(--accent);color:var(--on-accent)}
+.gate:disabled{color:var(--line-strong);cursor:default}
+.gate.wide{font-size:12px;letter-spacing:.04em}
+.angle{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 0}
+.angle .chips{margin-left:4px}
+
+/* measure */
+.measbox{display:grid;gap:12px}
+.shots{display:flex;gap:8px;align-items:center}
+.log{list-style:none;margin:16px 0 0;padding:0;max-height:200px;overflow:auto;font-size:12px;border-top:1px solid var(--line)}
+.log li{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line-strong)}
+.log b{color:var(--accent)}
+.log .empty{color:var(--muted);border:0}
+
+/* circuit */
+.circ{overflow-x:auto;border:1px solid var(--line-strong);background-color:var(--surface);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
+.circ svg{display:block}
+.circ text{font-family:var(--f-mono)}
+.circ g.op{cursor:pointer}
+.circ g.op:hover .hit{fill:var(--accent-soft)}
+.circ g.future{opacity:.25}
+.circ .initcol{cursor:pointer}
+.stepbar{display:flex;flex-wrap:wrap;align-items:center;gap:0;margin-bottom:12px}
+.stepbar .btn{width:36px;padding:0;font-size:15px;margin-right:-1px}
+.stepbar output{font-size:12px;letter-spacing:.08em;text-transform:uppercase;min-width:120px;text-align:center;border:1px solid var(--line-strong);border-left:0;height:36px;line-height:34px;margin-right:-1px}
+.stepbar .hint{margin:0 0 0 14px}
+.note{border:1px solid var(--line-strong);background:var(--surface);padding:12px 14px;margin-bottom:14px;font-size:12.5px;position:relative}
+.note b{display:flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.note b::before{content:"";width:7px;height:7px;background:var(--accent)}
+.qk{margin-top:14px}
+.qk pre{background:var(--panel);color:var(--panel-ink);border:1px solid var(--panel-edge);padding:14px 16px;font-size:12px;overflow-x:auto;margin:10px 0;max-height:340px}
+
+/* bloch */
+.blochs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.bcard{--b:var(--panel-muted);color:var(--panel-ink);border:1px solid var(--panel-edge);padding:20px 22px 18px;display:flex;flex-direction:column;gap:6px;min-width:0;
+  background:
+   linear-gradient(var(--b),var(--b)) left 9px top 9px/11px 1.5px,linear-gradient(var(--b),var(--b)) left 9px top 9px/1.5px 11px,
+   linear-gradient(var(--b),var(--b)) right 9px top 9px/11px 1.5px,linear-gradient(var(--b),var(--b)) right 9px top 9px/1.5px 11px,
+   linear-gradient(var(--b),var(--b)) left 9px bottom 9px/11px 1.5px,linear-gradient(var(--b),var(--b)) left 9px bottom 9px/1.5px 11px,
+   linear-gradient(var(--b),var(--b)) right 9px bottom 9px/11px 1.5px,linear-gradient(var(--b),var(--b)) right 9px bottom 9px/1.5px 11px,
+   var(--panel);background-repeat:no-repeat}
+.bcard canvas{width:100%;aspect-ratio:1;max-width:100%;cursor:grab;touch-action:none}
+.bcard canvas:active{cursor:grabbing}
+.btitle{display:flex;justify-content:space-between;align-items:center}
+.bmeta{display:grid;grid-template-columns:repeat(3,auto);justify-content:space-between;font-size:10.5px;color:var(--panel-muted);gap:2px 8px}
+.bmeta span{white-space:nowrap}
+.tag{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;font-weight:600;background:var(--accent);color:var(--on-accent)}
+.tag.pure{background:transparent;color:var(--panel-ink);box-shadow:inset 0 0 0 1px var(--panel-line)}
+
+/* state vector */
+.ampwrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+th{text-align:left;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--ink);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.ket{font-weight:700}
+tbody tr:hover td{background:var(--surface)}
+.bar{position:relative;height:10px;background:var(--sunk);min-width:140px}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--ink)}
+.bar s{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1.5px;background:var(--accent)}
+.ph{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:7px}
+.ketline{font-size:13px;background:var(--panel);color:var(--panel-ink);border:1px solid var(--panel-edge);padding:12px 14px;margin-bottom:14px;overflow-x:auto;white-space:nowrap}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:12px;letter-spacing:.04em}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px;background:var(--ink)}
+.legend span.s::before{background:var(--accent);width:3px}
+.legend span.w::before{background:conic-gradient(hsl(0 70% 50%),hsl(90 70% 50%),hsl(180 70% 50%),hsl(270 70% 50%),hsl(360 70% 50%));border-radius:50%}
+label.tog{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:11px;color:var(--muted);text-transform:none;letter-spacing:.02em;font-weight:400;cursor:pointer}
+
+@media (max-width:640px){
+  body{padding-inline:10px}
+  section{padding:16px}
+  .hero-main,.hero-side{padding:26px 20px 18px}
+  .sq{width:7px;height:7px}.sq.tl{left:8px;top:8px}.sq.br{right:8px;bottom:8px}
+  #ex{order:5;flex:1 1 100%}
+  .top{grid-template-columns:minmax(0,1fr)}
+  .toolbar{justify-content:flex-start;padding-top:0;border-top:0}
+  .blochs{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .bcard{padding:16px 14px 14px}
+  .bmeta{grid-template-columns:repeat(2,auto);font-size:9.5px}
+  .stepbar .hint{margin:8px 0 0;flex-basis:100%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" fill="var(--accent)"/><circle cx="17" cy="17" r="10" fill="none" stroke="#fff" stroke-width="1.6"/><ellipse cx="17" cy="17" rx="10" ry="3.4" fill="none" stroke="#fff" stroke-width="1" opacity=".7"/><line x1="17" y1="17" x2="23.5" y2="9.5" stroke="#fff" stroke-width="2"/><rect x="21.6" y="7.6" width="4" height="4" fill="#fff"/></svg>
+      <div><b>Superpose</b><small>Qubit simulator</small></div>
+    </div>
+    <div class="toolbar">
+      <a class="btn primary" href="../../#instruments" title="Back to mateogajic.github.io">← Portfolio</a><!-- portfolio link -->
+      <div class="stepper" title="Number of qubits">
+        <button id="nMinus" aria-label="Remove a qubit">−</button>
+        <output id="nOut">2 qubits</output>
+        <button id="nPlus" aria-label="Add a qubit">+</button>
+      </div>
+      <select id="ex" aria-label="Load an example">
+        <option value="">Examples…</option>
+        <option value="bell">Bell state</option>
+        <option value="ghz">GHZ state (3 qubits)</option>
+        <option value="mz">Mach–Zehnder interferometer</option>
+        <option value="deutsch">Deutsch algorithm</option>
+        <option value="tele">Teleportation</option>
+        <option value="grover">Grover (2 qubits)</option>
+      </select>
+      <button class="btn" id="undo">Undo</button>
+      <button class="btn" id="clear">Clear circuit</button>
+      <button class="btn themebtn" id="theme" aria-label="Change theme"></button>
+    </div>
+  </header>
+
+  <div class="hero">
+    <span class="sq tl"></span><span class="sq br"></span>
+    <div class="hero-main">
+      <h1>SUPERPOSE<span>.</span></h1>
+      <div class="verbs"><i></i><span>Prepare</span><span>Entangle</span><span>Measure</span></div>
+    </div>
+    <div class="hero-side">
+      <p class="sub">A state-vector simulator. Put each qubit anywhere on the Bloch sphere (or load any state vector), apply gates, and measure with real collapse.</p>
+      <div class="spec"><span>1–5 qubits</span><span>Exact amplitudes</span><span>Qiskit export</span></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="col">
+      <section>
+        <h2><span class="ix">01</span>Prepare <small>initial state</small></h2>
+        <div id="inits"></div>
+        <details id="customBox">
+          <summary>Custom state vector</summary>
+          <p class="hint">Enter the 2ⁿ amplitudes (one per line or comma-separated) in the order |00…0⟩, |00…1⟩, … You can use <code>i</code>, <code>√2</code> or <code>sqrt(2)</code>, <code>exp()</code>, <code>pi</code>, <code>^</code> and <code>1e-3</code>. The vector is normalized automatically.</p>
+          <textarea id="custom" spellcheck="false"></textarea>
+          <div class="row">
+            <button class="btn primary" id="loadCustom">Load vector</button>
+            <button class="btn" id="dropCustom">Back to product state</button>
+          </div>
+          <div class="msg" id="customMsg"></div>
+        </details>
+      </section>
+
+      <section>
+        <h2><span class="ix">02</span>Gates <small>click to apply</small></h2>
+        <div class="sel">
+          <div class="chips" id="selT"></div>
+          <div class="chips" id="selC"></div>
+          <div class="chips" id="selC2"></div>
+        </div>
+        <div class="lbl">Single qubit · target</div>
+        <div class="gates" id="g1"></div>
+        <div class="lbl">Rotations · target</div>
+        <div class="angle">
+          <span class="lbl">θ =</span>
+          <input type="number" id="angle" value="0.5" step="0.0625"> <span>π</span>
+          <span class="chips"><button class="chip" data-a="0.25">π/4</button><button class="chip" data-a="0.5">π/2</button><button class="chip" data-a="1">π</button><button class="chip" data-a="-0.5">−π/2</button></span>
+        </div>
+        <div class="gates" id="g2"></div>
+        <div class="lbl">Multi-qubit · control → target</div>
+        <div class="gates" id="g3"></div>
+      </section>
+
+      <section>
+        <h2><span class="ix">03</span>Measure</h2>
+        <div class="measbox">
+          <div class="row">
+            <span class="lbl">Qubit</span><select id="mq"></select>
+            <span class="lbl">Basis</span>
+            <select id="mb"><option value="Z">Z (|0⟩,|1⟩)</option><option value="X">X (|+⟩,|−⟩)</option><option value="Y">Y (|+i⟩,|−i⟩)</option></select>
+          </div>
+          <div class="row">
+            <button class="btn meas" id="measQ">Measure qubit</button>
+            <button class="btn meas-ghost" id="measAll">Measure all (Z)</button>
+          </div>
+          <div class="row">
+            <div class="shots"><span class="lbl">Shots</span><input type="number" id="shotsN" value="1024" min="1" max="100000"></div>
+            <button class="btn" id="runShots">Sample without collapsing</button>
+          </div>
+        </div>
+        <ul class="log" id="log"></ul>
+      </section>
+    </div>
+
+    <div class="col">
+      <section>
+        <h2>Circuit <small id="circInfo"></small></h2>
+        <div class="note" id="note" hidden><b id="noteT"></b><span id="noteB"></span></div>
+        <div class="stepbar">
+          <button class="btn" id="stFirst" title="Initial state" aria-label="Go to the initial state">«</button>
+          <button class="btn" id="stPrev" title="Previous step (←)" aria-label="Previous step">‹</button>
+          <output id="stOut"></output>
+          <button class="btn" id="stNext" title="Next step (→)" aria-label="Next step">›</button>
+          <button class="btn" id="stLast" title="End of circuit" aria-label="Go to the end">»</button>
+          <span class="hint">Click a gate or use ← → to see the state at that point</span>
+        </div>
+        <div class="circ" id="circ"></div>
+        <details class="qk" id="qkBox">
+          <summary>Equivalent Qiskit code</summary>
+          <pre id="qk"></pre>
+          <button class="btn" id="qkCopy">Copy code</button>
+        </details>
+      </section>
+      <section>
+        <h2>Bloch spheres <small>drag to rotate · reduced state of each qubit</small></h2>
+        <div class="blochs" id="blochs"></div>
+      </section>
+      <section>
+        <h2>State vector
+          <label class="tog"><input type="checkbox" id="nz" checked> non-zero amplitudes only</label>
+        </h2>
+        <div class="ketline" id="ketline"></div>
+        <div class="ampwrap"><table id="amps"></table></div>
+        <div class="legend"><span>Theoretical probability |cᵢ|²</span><span class="s" id="shotLegend">Sampled frequency</span><span class="w">Dot color = phase</span></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const PI=Math.PI, SQ=Math.SQRT1_2, EPS=1e-10;
+const $=s=>document.querySelector(s);
+const PRESETS=[["|0⟩",0,0],["|1⟩",PI,0],["|+⟩",PI/2,0],["|−⟩",PI/2,PI],["|+i⟩",PI/2,PI/2],["|−i⟩",PI/2,3*PI/2]];
+
+const S={n:2,init:[],custom:null,ops:[],re:null,im:null,shots:null,cursor:null,note:null,
+  sel:{t:1,c:0,c2:2},view:{az:-2.2,el:0.32}};
+for(let q=0;q<5;q++) S.init.push({th:0,ph:0});
+const cur=()=>S.cursor==null?S.ops.length:S.cursor;   // number of operations applied
+
+const EX={
+  bell:{n:2,t:"Bell state |Φ⁺⟩",ops:[{g:"H",t:0},{g:"CX",c:0,t:1}],
+    b:"H puts q0 in superposition and the CNOT turns it into correlation: (|00⟩+|11⟩)/√2. Both arrows shrink to the center because each qubit on its own is maximally mixed. Measure q0 and q1 collapses to the same value."},
+  ghz:{n:3,t:"GHZ state",ops:[{g:"H",t:0},{g:"CX",c:0,t:1},{g:"CX",c:1,t:2}],
+    b:"Bell generalized to three qubits: (|000⟩+|111⟩)/√2. Measuring any one of them fixes the other two."},
+  mz:{n:1,t:"Mach–Zehnder interferometer",ops:[{g:"H",t:0},{g:"P",t:0,a:PI/2},{g:"H",t:0}],
+    b:"Each H is a 50:50 beam splitter and P(φ) is the phase difference between the arms, so P(1) = sin²(φ/2). Click the P gate and press “Remove step”: with no phase shift the photon always exits through |0⟩."},
+  deutsch:{n:2,t:"Deutsch algorithm",init:[null,{th:PI,ph:0}],ops:[{g:"H",t:0},{g:"H",t:1},{g:"CX",c:0,t:1},{g:"H",t:0},{g:"M",t:0,b:"Z"}],
+    b:"q1 starts in |1⟩ and the CNOT is the oracle f(x) = x, a balanced function. With a single query, q0 gives 1 with probability 1. Remove the CNOT (constant f) and q0 gives 0."},
+  tele:{n:3,t:"Quantum teleportation",init:[{th:PI/3,ph:PI/4}],
+    ops:[{g:"H",t:1},{g:"CX",c:1,t:2},{g:"CX",c:0,t:1},{g:"H",t:0},{g:"CX",c:1,t:2},{g:"CZ",c:0,t:2},{g:"M",t:0,b:"Z"},{g:"M",t:1,b:"Z"}],
+    b:"q0 carries an arbitrary state |ψ⟩. At the end, q2’s sphere matches q0’s at step 0 (press «). The corrections use controlled CNOT and CZ gates instead of classical bits (deferred measurement principle), so the final measurements don’t affect q2."},
+  grover:{n:2,t:"Grover search",ops:[{g:"H",t:0},{g:"H",t:1},{g:"CZ",c:0,t:1},{g:"H",t:0},{g:"H",t:1},{g:"X",t:0},{g:"X",t:1},{g:"CZ",c:0,t:1},{g:"X",t:0},{g:"X",t:1},{g:"H",t:0},{g:"H",t:1}],
+    b:"Finds |11⟩ among 4 possibilities in a single iteration: oracle (CZ) and diffuser (H X CZ X H). At the end |11⟩ has probability 1. The minus sign is a global phase and cannot be measured."}
+};
+function loadExample(k){
+  const E=EX[k];if(!E)return;
+  S.n=E.n;S.custom=null;S.cursor=null;S.note=E;
+  for(let q=0;q<5;q++)S.init[q]={th:0,ph:0};
+  (E.init||[]).forEach((v,q)=>{if(v)S.init[q]={...v};});
+  S.ops=E.ops.map(o=>({...o}));
+  structural();rebuild(true);
+}
+
+/* ---------- matrices ---------- */
+function mat(g,a){
+  const c=Math.cos(a/2), s=Math.sin(a/2);
+  switch(g){
+    case "H":return[SQ,0,SQ,0,SQ,0,-SQ,0];
+    case "X":return[0,0,1,0,1,0,0,0];
+    case "Y":return[0,0,0,-1,0,1,0,0];
+    case "Z":return[1,0,0,0,0,0,-1,0];
+    case "S":return[1,0,0,0,0,0,0,1];
+    case "Sdg":return[1,0,0,0,0,0,0,-1];
+    case "T":return[1,0,0,0,0,0,SQ,SQ];
+    case "Tdg":return[1,0,0,0,0,0,SQ,-SQ];
+    case "SX":return[.5,.5,.5,-.5,.5,-.5,.5,.5];
+    case "Rx":return[c,0,0,-s,0,-s,c,0];
+    case "Ry":return[c,0,-s,0,s,0,c,0];
+    case "Rz":return[c,-s,0,0,0,0,c,s];
+    case "P":return[1,0,0,0,0,0,Math.cos(a),Math.sin(a)];
+  }
+}
+const bitm=q=>1<<(S.n-1-q);
+function applyU(q,M,ctrls){
+  const N=1<<S.n,m=bitm(q);let cm=0;(ctrls||[]).forEach(c=>cm|=bitm(c));
+  const[a0,a1,b0,b1,c0,c1,d0,d1]=M,re=S.re,im=S.im;
+  for(let i=0;i<N;i++){
+    if(i&m)continue; if((i&cm)!==cm)continue; const j=i|m;
+    const xr=re[i],xi=im[i],yr=re[j],yi=im[j];
+    re[i]=a0*xr-a1*xi+b0*yr-b1*yi; im[i]=a0*xi+a1*xr+b0*yi+b1*yr;
+    re[j]=c0*xr-c1*xi+d0*yr-d1*yi; im[j]=c0*xi+c1*xr+d0*yi+d1*yr;
+  }
+}
+function swap(a,b){
+  const N=1<<S.n,ma=bitm(a),mb=bitm(b);
+  for(let i=0;i<N;i++){ if((i&ma)&&!(i&mb)){const j=(i&~ma)|mb;
+    let t=S.re[i];S.re[i]=S.re[j];S.re[j]=t;t=S.im[i];S.im[i]=S.im[j];S.im[j]=t;}}
+}
+function normalize(){let s=0;for(let i=0;i<S.re.length;i++)s+=S.re[i]**2+S.im[i]**2;s=Math.sqrt(s);
+  for(let i=0;i<S.re.length;i++){S.re[i]/=s;S.im[i]/=s;}}
+
+/* ---------- preparation ---------- */
+function prepare(){
+  const n=S.n,N=1<<n;S.re=new Float64Array(N);S.im=new Float64Array(N);
+  if(S.custom&&S.custom.length===2*N){for(let i=0;i<N;i++){S.re[i]=S.custom[2*i];S.im[i]=S.custom[2*i+1];}return;}
+  S.custom=null;
+  for(let i=0;i<N;i++){
+    let ar=1,ai=0;
+    for(let q=0;q<n;q++){
+      const{th,ph}=S.init[q],b=(i>>(n-1-q))&1;
+      const fr=b?Math.sin(th/2)*Math.cos(ph):Math.cos(th/2), fi=b?Math.sin(th/2)*Math.sin(ph):0;
+      const nr=ar*fr-ai*fi; ai=ar*fi+ai*fr; ar=nr;
+    }
+    S.re[i]=ar;S.im[i]=ai;
+  }
+}
+
+/* ---------- measurement ---------- */
+function toBasis(q,b){if(b==="X")applyU(q,mat("H"));if(b==="Y"){applyU(q,mat("Sdg"));applyU(q,mat("H"));}}
+function fromBasis(q,b){if(b==="X")applyU(q,mat("H"));if(b==="Y"){applyU(q,mat("H"));applyU(q,mat("S"));}}
+function measureQ(op,resample){
+  toBasis(op.t,op.b);
+  const N=1<<S.n,m=bitm(op.t);let p1=0;
+  for(let i=0;i<N;i++)if(i&m)p1+=S.re[i]**2+S.im[i]**2;
+  let out=(!resample&&op.out!=null)?op.out:null;
+  if(out!=null&&(out?p1:1-p1)<1e-12)out=null;
+  if(out==null)out=Math.random()<p1?1:0;
+  const p=out?p1:1-p1;
+  for(let i=0;i<N;i++)if(((i&m)?1:0)!==out){S.re[i]=0;S.im[i]=0;}
+  normalize(); fromBasis(op.t,op.b);
+  op.out=out;op.p=p;
+}
+function measureAll(op,resample){
+  const N=1<<S.n;let k=(!resample&&op.out!=null)?op.out:null;
+  if(k!=null&&S.re[k]**2+S.im[k]**2<1e-12)k=null;
+  if(k==null){let r=Math.random(),acc=0;k=N-1;for(let i=0;i<N;i++){acc+=S.re[i]**2+S.im[i]**2;if(r<acc){k=i;break;}}}
+  const p=S.re[k]**2+S.im[k]**2,a=Math.sqrt(p),zr=S.re[k]/a,zi=S.im[k]/a;
+  S.re.fill(0);S.im.fill(0);S.re[k]=zr;S.im[k]=zi;
+  op.out=k;op.p=p;
+}
+
+function apply(op,resample){
+  switch(op.g){
+    case "CX":applyU(op.t,mat("X"),[op.c]);break;
+    case "CZ":applyU(op.t,mat("Z"),[op.c]);break;
+    case "CCX":applyU(op.t,mat("X"),[op.c,op.c2]);break;
+    case "SWAP":swap(op.c,op.t);break;
+    case "M":measureQ(op,resample);break;
+    case "MA":measureAll(op,resample);break;
+    default:applyU(op.t,mat(op.g,op.a));
+  }
+}
+function rebuild(resample){prepare();const c=cur();for(let k=0;k<c;k++)apply(S.ops[k],resample);S.shots=null;render();}
+function push(op){
+  const c=cur();
+  if(c===S.ops.length){apply(op,true);S.ops.push(op);S.cursor=null;S.shots=null;render();return;}
+  S.ops.splice(c,0,op);S.cursor=c+1;rebuild(false);   // insert at the step being viewed
+}
+function setCursor(c){c=Math.max(0,Math.min(S.ops.length,c));S.cursor=c>=S.ops.length?null:c;rebuild(false);}
+
+/* ---------- formatting ---------- */
+const z=x=>Math.abs(x)<5e-4?0:x;
+const mn=t=>t.replace(/-/g,"−");
+const f3=x=>mn(z(x).toFixed(3));
+function fmtC(r,i){r=z(r);i=z(i);if(!i)return f3(r);if(!r)return f3(i)+"i";return f3(r)+(i<0?" − ":" + ")+Math.abs(i).toFixed(3)+"i";}
+function fracPi(a){
+  const t=a/PI;if(Math.abs(t)<1e-9)return"0";
+  for(const d of[1,2,3,4,6,8,12,16]){const nn=t*d;if(Math.abs(nn-Math.round(nn))<1e-6){
+    const n=Math.round(nn),sg=n<0?"−":"",an=Math.abs(n);return sg+(an===1?"":an)+"π"+(d===1?"":"/"+d);}}
+  return mn(t.toFixed(3))+"π";
+}
+const ket=(i,n)=>"|"+i.toString(2).padStart(n,"0")+"⟩";
+function initName(q){const{th,ph}=S.init[q];
+  for(const[n,t,p]of PRESETS)if(Math.abs(th-t)<1e-6&&(Math.abs(Math.sin(t))<1e-6||Math.abs(((ph-p)%(2*PI)+2*PI)%(2*PI))<1e-6))return n;
+  return"|ψ⟩";}
+
+/* ---------- complex-number parser ---------- */
+function parseC(src){
+  const s=src.toLowerCase().replace(/\s+/g,"").replace(/π/g,"pi").replace(/√/g,"sqrt").replace(/−/g,"-");
+  let p=0;const peek=()=>s[p];
+  const mul=(a,b)=>[a[0]*b[0]-a[1]*b[1],a[0]*b[1]+a[1]*b[0]];
+  const div=(a,b)=>{const d=b[0]**2+b[1]**2;if(d===0)throw"Division by zero";return[(a[0]*b[0]+a[1]*b[1])/d,(a[1]*b[0]-a[0]*b[1])/d];};
+  const cexp=a=>{const e=Math.exp(a[0]);return[e*Math.cos(a[1]),e*Math.sin(a[1])];};
+  const clog=a=>[Math.log(Math.hypot(a[0],a[1])),Math.atan2(a[1],a[0])];
+  const cpow=(a,b)=>(a[0]===0&&a[1]===0)?[0,0]:cexp(mul(b,clog(a)));
+  const F={sqrt:a=>cpow(a,[.5,0]),exp:cexp,cos:a=>[Math.cos(a[0])*Math.cosh(a[1]),-Math.sin(a[0])*Math.sinh(a[1])],sin:a=>[Math.sin(a[0])*Math.cosh(a[1]),Math.cos(a[0])*Math.sinh(a[1])]};
+  function expr(){let v=term();while(peek()==="+"||peek()==="-"){const o=s[p++],w=term();v=o==="+"?[v[0]+w[0],v[1]+w[1]]:[v[0]-w[0],v[1]-w[1]];}return v;}
+  function term(){let v=unary();for(;;){const c=peek();
+    if(c==="*"||c==="/"){p++;const w=unary();v=c==="*"?mul(v,w):div(v,w);}
+    else if(c&&/[0-9.a-z(]/.test(c)){v=mul(v,power());}else break;}return v;}
+  function unary(){if(peek()==="-"){p++;const v=unary();return[-v[0],-v[1]];}if(peek()==="+"){p++;return unary();}return power();}
+  function power(){let b=atom();if(peek()==="^"){p++;b=cpow(b,unary());}return b;}
+  function atom(){
+    const c=peek();
+    if(c==="("){p++;const v=expr();if(s[p++]!==")")throw"Missing “)”";return v;}
+    const m=/^(\d+\.?\d*|\.\d+)(e[+-]?\d+)?/.exec(s.slice(p));
+    if(m){p+=m[0].length;return[parseFloat(m[0]),0];}
+    for(const name of["sqrt","exp","cos","sin","pi","i","e"]){
+      if(s.startsWith(name,p)){p+=name.length;
+        if(name==="i")return[0,1];if(name==="pi")return[PI,0];if(name==="e")return[Math.E,0];
+        if(!peek())throw name+" needs an argument";return F[name](atom());}
+    }
+    throw"Can’t read “"+(s.slice(p,p+6)||"end")+"”";
+  }
+  if(!s)throw"Empty amplitude";
+  const v=expr();if(p<s.length)throw"Unexpected “"+s.slice(p)+"”";
+  if(!isFinite(v[0])||!isFinite(v[1]))throw"Value is not finite";return v;
+}
+
+/* ---------- UI: preparation ---------- */
+function renderInits(){
+  const box=$("#inits");box.innerHTML="";
+  for(let q=0;q<S.n;q++){
+    const d=document.createElement("div");d.className="qinit";
+    d.innerHTML=`<div class="qhead"><span class="qname">q${q}</span><span class="qamp" id="amp${q}"></span></div>
+      <div class="presets">${PRESETS.map((p,k)=>`<button data-q="${q}" data-k="${k}">${p[0]}</button>`).join("")}</div>
+      <div class="slider"><span>θ</span><input type="range" id="th${q}" min="0" max="${PI}" step="0.001" value="${S.init[q].th}"><output id="tho${q}"></output></div>
+      <div class="slider"><span>φ</span><input type="range" id="ph${q}" min="0" max="${2*PI}" step="0.001" value="${S.init[q].ph}"><output id="pho${q}"></output></div>`;
+    box.appendChild(d);
+  }
+  box.querySelectorAll(".presets button").forEach(b=>b.onclick=()=>{
+    const q=+b.dataset.q,[,t,p]=PRESETS[+b.dataset.k];S.init[q]={th:t,ph:p};S.custom=null;
+    $("#th"+q).value=t;$("#ph"+q).value=p;rebuild(true);});
+  for(let q=0;q<S.n;q++){
+    $("#th"+q).oninput=e=>{S.init[q].th=+e.target.value;S.custom=null;rebuild(true);};
+    $("#ph"+q).oninput=e=>{S.init[q].ph=+e.target.value;S.custom=null;rebuild(true);};
+  }
+}
+function refreshInitReadouts(){
+  for(let q=0;q<S.n;q++){
+    const{th,ph}=S.init[q];
+    $("#tho"+q).textContent=fracPi(th);
+    $("#pho"+q).textContent=fracPi(ph);
+    const a=Math.cos(th/2),b=Math.sin(th/2);
+    let cb=fmtC(b*Math.cos(ph),b*Math.sin(ph));if(/ [+−] /.test(cb))cb="("+cb+")";
+    $("#amp"+q).textContent=S.custom?"(custom vector)":`${f3(a)}|0⟩ + ${cb}|1⟩`;
+    const nm=initName(q);
+    document.querySelectorAll(`.presets button[data-q="${q}"]`).forEach(b=>b.classList.toggle("on",!S.custom&&b.textContent===nm));
+  }
+  $("#customBox").querySelector("summary").textContent=S.custom?"Custom state vector · active":"Custom state vector";
+}
+
+/* ---------- UI: selection and gates ---------- */
+const G1=[["H","H","Hadamard"],["X","X","Pauli X (NOT)"],["Y","Y","Pauli Y"],["Z","Z","Pauli Z"],["S","S","Phase π/2"],["Sdg","S†","Phase −π/2"],["T","T","Phase π/4"],["Tdg","T†","Phase −π/4"],["SX","√X","Square root of X"]];
+const G2=[["Rx","Rx","Rotation about X"],["Ry","Ry","Rotation about Y"],["Rz","Rz","Rotation about Z"],["P","P","Phase P(θ)"]];
+const G3=[["CX","CNOT","NOT controlado (control → objetivo)"],["CZ","CZ","Z controlada"],["SWAP","SWAP","Intercambia control y objetivo"],["CCX","CCX","Toffoli (control, control 2 → objetivo)"]];
+function gateBtns(id,list){$(id).innerHTML=list.map(([g,l,t])=>`<button class="gate${l.length>3?" wide":""}" data-g="${g}" title="${t}">${l}</button>`).join("");}
+gateBtns("#g1",G1);gateBtns("#g2",G2);gateBtns("#g3",G3);
+document.querySelectorAll(".gate").forEach(b=>b.onclick=()=>{
+  const g=b.dataset.g,{t,c,c2}=S.sel;
+  if(G1.some(x=>x[0]===g))push({g,t});
+  else if(G2.some(x=>x[0]===g))push({g,t,a:(+$("#angle").value||0)*PI});
+  else if(g==="CCX")push({g,t,c,c2});
+  else push({g,t,c});
+});
+document.querySelectorAll(".angle .chip").forEach(b=>b.onclick=()=>{$("#angle").value=b.dataset.a;});
+
+function renderSel(){
+  const n=S.n,s=S.sel;
+  if(s.t>=n)s.t=n-1;
+  if(s.c>=n||s.c===s.t)s.c=[...Array(n).keys()].find(q=>q!==s.t)??0;
+  if(s.c2>=n||s.c2===s.t||s.c2===s.c)s.c2=[...Array(n).keys()].find(q=>q!==s.t&&q!==s.c)??0;
+  const row=(id,key,label,show)=>{const el=$(id);el.hidden=!show;
+    el.innerHTML=`<span class="lbl">${label}</span>`+[...Array(n).keys()].map(q=>`<button class="chip${s[key]===q?" on":""}" data-q="${q}">q${q}</button>`).join("");
+    el.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{const q=+b.dataset.q,old=s[key];
+      const other=["t","c","c2"].find(k=>k!==key&&s[k]===q);   // if already selected elsewhere, swap
+      if(other)s[other]=old;
+      s[key]=q;renderSel();});};
+  row("#selT","t","Target",true);row("#selC","c","Control",n>=2);row("#selC2","c2","Control 2",n>=3);
+  document.querySelectorAll("#g3 .gate").forEach(b=>{const g=b.dataset.g;
+    b.disabled=g==="CCX"?(n<3||s.c2===s.c||s.c2===s.t):(n<2);});
+}
+
+/* ---------- circuit ---------- */
+function renderCircuit(){
+  const n=S.n,ops=S.ops,cw=50,rh=48,L=70,top=26;
+  const W=Math.max(L+Math.max(ops.length,7)*cw+30,($("#circ").clientWidth||0)-2),H=top+n*rh;   // fill the panel width
+  const y=q=>top+q*rh+rh/2-10,ink="var(--ink)",sf="var(--surface)";
+  let g=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  for(let q=0;q<n;q++){
+    g+=`<line x1="${L-6}" x2="${W-10}" y1="${y(q)}" y2="${y(q)}" stroke="var(--wire)" stroke-width="1.5"/>`;
+    g+=`<text x="8" y="${y(q)+4}" font-size="12" fill="var(--muted)">q${q}</text>`;
+    if(!S.custom)g+=`<text x="${L-10}" y="${y(q)+4}" font-size="12" text-anchor="end" fill="${ink}" font-weight="600">${initName(q)}</text>`;
+  }
+  if(S.custom){g+=`<path d="M${L-14} ${y(0)-10} h-4 V${y(n-1)+10} h4" fill="none" stroke="${ink}"/>`;
+    g+=`<text x="${L-22}" y="${(y(0)+y(n-1))/2+4}" font-size="12" text-anchor="end" fill="${ink}" font-weight="600">|ψ⟩</text>`;}
+  const box=(x,q,l,sub,col)=>{let s=`<rect x="${x-16}" y="${y(q)-16}" width="32" height="32" fill="${sf}" stroke="${col||ink}" stroke-width="1.5"/>`;
+    s+=sub?`<text x="${x}" y="${y(q)-1}" font-size="12" text-anchor="middle" fill="${col||ink}" font-weight="600">${l}</text><text x="${x}" y="${y(q)+11}" font-size="8.5" text-anchor="middle" fill="var(--muted)">${sub}</text>`
+          :`<text x="${x}" y="${y(q)+4.5}" font-size="13" text-anchor="middle" fill="${col||ink}" font-weight="600">${l}</text>`;return s;};
+  const dot=(x,q)=>`<rect x="${x-4.5}" y="${y(q)-4.5}" width="9" height="9" fill="${ink}"/>`;
+  const vline=(x,a,b)=>`<line x1="${x}" x2="${x}" y1="${y(Math.min(a,b))}" y2="${y(Math.max(a,b))}" stroke="${ink}" stroke-width="1.5"/>`;
+  const meter=(x,q,lab)=>{const m="var(--accent)",w="#fff";return `<rect x="${x-16}" y="${y(q)-16}" width="32" height="32" fill="${m}"/>
+    <path d="M${x-9} ${y(q)+5} A10 10 0 0 1 ${x+9} ${y(q)+5}" fill="none" stroke="${w}" stroke-width="1.5"/>
+    <line x1="${x}" y1="${y(q)+5}" x2="${x+7}" y2="${y(q)-7}" stroke="${w}" stroke-width="1.5"/>
+    <text x="${x}" y="${y(q)+29}" font-size="10" text-anchor="middle" fill="${m}" font-weight="600">${lab}</text>`;};
+  const LBL={Sdg:"S†",Tdg:"T†",SX:"√X"},cc=cur();
+  g+=`<rect class="initcol" data-k="-1" x="0" y="0" width="${L}" height="${H}" fill="transparent"><title>Initial state</title></rect>`;
+  ops.forEach((o,k)=>{const x=L+k*cw+cw/2;
+    g+=`<g class="op${k>=cc?" future":""}" data-k="${k}"><rect class="hit" x="${x-cw/2+2}" y="4" width="${cw-4}" height="${H-8}" fill="transparent"/>`;
+    switch(o.g){
+      case "CX":g+=vline(x,o.c,o.t)+dot(x,o.c)+`<circle cx="${x}" cy="${y(o.t)}" r="11" fill="${sf}" stroke="${ink}" stroke-width="1.5"/><path d="M${x-11} ${y(o.t)}h22M${x} ${y(o.t)-11}v22" stroke="${ink}" stroke-width="1.5"/>`;break;
+      case "CCX":{const lo=Math.min(o.c,o.c2,o.t),hi=Math.max(o.c,o.c2,o.t);g+=vline(x,lo,hi)+dot(x,o.c)+dot(x,o.c2)+`<circle cx="${x}" cy="${y(o.t)}" r="11" fill="${sf}" stroke="${ink}" stroke-width="1.5"/><path d="M${x-11} ${y(o.t)}h22M${x} ${y(o.t)-11}v22" stroke="${ink}" stroke-width="1.5"/>`;break;}
+      case "CZ":g+=vline(x,o.c,o.t)+dot(x,o.c)+dot(x,o.t);break;
+      case "SWAP":{g+=vline(x,o.c,o.t);for(const q of[o.c,o.t])g+=`<path d="M${x-6} ${y(q)-6}l12 12M${x+6} ${y(q)-6}l-12 12" stroke="${ink}" stroke-width="2"/>`;break;}
+      case "M":g+=meter(x,o.t,(o.b!=="Z"?o.b+":":"")+(o.b==="Z"?o.out:(o.b==="X"?(o.out?"−":"+"):(o.out?"−i":"+i"))));break;
+      case "MA":{const bits=o.out.toString(2).padStart(n,"0");for(let q=0;q<n;q++)g+=meter(x,q,bits[q]);break;}
+      default:g+=box(x,o.t,LBL[o.g]||o.g,o.a!=null?fracPi(o.a):"");
+    }
+    g+="</g>";
+  });
+  if(ops.length){const xc=L+cc*cw;
+    g+=`<line x1="${xc}" x2="${xc}" y1="6" y2="${H-6}" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3"/>`;
+    g+=`<path d="M${xc-5} 2 h10 l-5 6z" fill="var(--accent)"/>`;}
+  g+="</svg>";const box2=$("#circ");box2.innerHTML=g;
+  if(S.cursor==null)box2.scrollLeft=Math.max(0,L+ops.length*cw+30-box2.clientWidth);   // keep the last gate in view
+  else{const xc=L+cc*cw;if(xc<box2.scrollLeft+40||xc>box2.scrollLeft+box2.clientWidth-40)box2.scrollLeft=xc-box2.clientWidth/2;}
+  $("#circInfo").textContent=ops.length?(ops.length===1?"1 operation":ops.length+" operations"):"empty";
+  $("#stOut").textContent=`step ${cc} of ${ops.length}`;
+  $("#stFirst").disabled=$("#stPrev").disabled=cc===0;
+  $("#stNext").disabled=$("#stLast").disabled=cc===ops.length;
+}
+
+/* ---------- Bloch ---------- */
+function blochVec(q){
+  const N=1<<S.n,m=bitm(q);let x=0,yv=0,zv=0;
+  for(let i=0;i<N;i++){if(i&m)continue;const j=i|m;
+    const ar=S.re[i],ai=S.im[i],br=S.re[j],bi=S.im[j];
+    zv+=ar*ar+ai*ai-br*br-bi*bi; x+=2*(ar*br+ai*bi); yv+=2*(ar*bi-ai*br);}
+  return[x,yv,zv];
+}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function renderBlochCards(){
+  const box=$("#blochs");box.innerHTML="";
+  for(let q=0;q<S.n;q++){
+    const d=document.createElement("div");d.className="bcard";
+    d.innerHTML=`<div class="btitle"><span class="qname">q${q}</span><span class="tag" id="tag${q}"></span></div>
+      <canvas id="cv${q}"></canvas>
+      <div class="bmeta" id="bm${q}"></div>`;
+    box.appendChild(d);
+    const cv=d.querySelector("canvas");let drag=null;
+    cv.addEventListener("pointerdown",e=>{drag=[e.clientX,e.clientY,S.view.az,S.view.el];cv.setPointerCapture(e.pointerId);});
+    cv.addEventListener("pointermove",e=>{if(!drag)return;S.view.az=drag[2]-(e.clientX-drag[0])*0.01;
+      S.view.el=Math.max(-1.4,Math.min(1.4,drag[3]+(e.clientY-drag[1])*0.01));drawBlochs();});
+    cv.addEventListener("pointerup",()=>drag=null);cv.addEventListener("pointercancel",()=>drag=null);
+  }
+}
+function drawBlochs(){
+  const C={ink:css("--panel-ink"),muted:css("--panel-muted"),line:css("--panel-line"),acc:css("--accent")};
+  const{az,el}=S.view,ca=Math.cos(az),sa=Math.sin(az),ce=Math.cos(el),se=Math.sin(el);
+  for(let q=0;q<S.n;q++){
+    const cv=$("#cv"+q);if(!cv)continue;
+    const w=cv.clientWidth||180,dpr=window.devicePixelRatio||1;
+    if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(w*dpr);}
+    const g=cv.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,w);
+    const R=w*0.36,cx=w/2,cy=w/2;
+    const P=(x,y,z)=>{const x1=x*ca-y*sa,y1=x*sa+y*ca;return[cx+R*x1,cy-R*(z*ce+y1*se),-y1*ce+z*se];};
+    g.lineWidth=1.2;g.strokeStyle=C.line;g.beginPath();g.arc(cx,cy,R,0,2*PI);g.stroke();
+    const circle=(fn)=>{let prev=null;for(let k=0;k<=96;k++){const t=k/96*2*PI,p=P(...fn(t));
+      if(prev){g.beginPath();g.setLineDash(p[2]<0?[3,3]:[]);g.globalAlpha=p[2]<0?.45:1;g.moveTo(prev[0],prev[1]);g.lineTo(p[0],p[1]);g.stroke();}prev=p;}
+      g.setLineDash([]);g.globalAlpha=1;};
+    g.strokeStyle=C.line;circle(t=>[Math.cos(t),Math.sin(t),0]);
+    g.globalAlpha=.5;circle(t=>[Math.cos(t),0,Math.sin(t)]);g.globalAlpha=1;
+    const axes=[[[1.18,0,0],"x"],[[0,1.18,0],"y"],[[0,0,1.18],"|0⟩"],[[0,0,-1.18],"|1⟩"],[[-1.18,0,0],""],[[0,-1.18,0],""]];
+    g.font=`600 ${Math.max(10,w*0.062)}px JetBrains Mono, monospace`;g.textAlign="center";g.textBaseline="middle";
+    for(const[v,l]of axes){const o=P(0,0,0),p=P(...v);g.strokeStyle=C.line;g.setLineDash([2,3]);g.globalAlpha=p[2]<0?.4:.9;
+      g.beginPath();g.moveTo(o[0],o[1]);g.lineTo(p[0],p[1]);g.stroke();g.setLineDash([]);
+      if(l){const t=P(v[0]*1.12,v[1]*1.12,v[2]*1.12);g.fillStyle=C.muted;g.fillText(l,t[0],t[1]);}g.globalAlpha=1;}
+    const[bx,by,bz]=blochVec(q),r=Math.hypot(bx,by,bz),o=P(0,0,0),p=P(bx,by,bz);
+    // projection onto the equator
+    const pe=P(bx,by,0);g.strokeStyle=C.acc;g.globalAlpha=.35;g.setLineDash([2,2]);g.beginPath();g.moveTo(o[0],o[1]);g.lineTo(pe[0],pe[1]);g.lineTo(p[0],p[1]);g.stroke();g.setLineDash([]);g.globalAlpha=1;
+    g.save();g.shadowColor=C.acc;g.shadowBlur=14;
+    g.strokeStyle=C.acc;g.lineWidth=2.6;g.beginPath();g.moveTo(o[0],o[1]);g.lineTo(p[0],p[1]);g.stroke();
+    const sz=r>1e-3?9:5;g.fillStyle=C.acc;g.fillRect(p[0]-sz/2,p[1]-sz/2,sz,sz);g.restore();
+    g.fillStyle=C.ink;g.beginPath();g.arc(o[0],o[1],2,0,2*PI);g.fill();
+    const tag=$("#tag"+q),pure=r>0.999;tag.textContent=pure?"pure":"entangled";tag.className="tag"+(pure?" pure":"");
+    tag.title=pure?"The qubit’s reduced state is pure":"|r| < 1: the qubit is entangled with the rest";
+    $("#bm"+q).innerHTML=`<span>⟨X⟩ ${f3(bx)}</span><span>⟨Y⟩ ${f3(by)}</span><span>⟨Z⟩ ${f3(bz)}</span><span>|r| ${f3(r)}</span><span>P(1) ${f3((1-bz)/2)}</span>`;
+  }
+}
+
+/* ---------- amplitudes ---------- */
+function renderAmps(){
+  const n=S.n,N=1<<n,nz=$("#nz").checked,sh=S.shots;
+  let rows="",terms=[];
+  for(let i=0;i<N;i++){
+    const r=S.re[i],im=S.im[i],p=r*r+im*im;
+    if(p>EPS)terms.push({i,r,im});
+    if(nz&&p<=EPS&&!(sh&&sh.c[i]))continue;
+    let ph=Math.atan2(z(im),z(r));if(ph<=-PI+1e-9)ph=PI;   // −π and π are the same phase
+    const hue=((ph*180/PI)%360+360)%360;
+    const fq=sh?sh.c[i]/sh.n:null;
+    rows+=`<tr><td class="ket">${ket(i,n)}</td><td>${fmtC(r,im)}</td>
+      <td>${p>EPS?`<span class="ph" style="background:hsl(${hue} 70% 50%)"></span>${fracPi(Math.round(ph/PI*1e6)/1e6*PI)}`:"—"}</td>
+      <td>${f3(p)}</td>
+      <td><div class="bar"><i style="width:${(p*100).toFixed(2)}%"></i>${fq!=null?`<s style="left:${(fq*100).toFixed(2)}%"></s>`:""}</div></td>
+      ${sh?`<td>${sh.c[i]}</td>`:""}</tr>`;
+  }
+  $("#amps").innerHTML=`<thead><tr><th>Basis</th><th>Amplitude cᵢ</th><th>Phase</th><th>P</th><th>Probability</th>${sh?`<th>Counts</th>`:""}</tr></thead><tbody>${rows}</tbody>`;
+  $("#shotLegend").hidden=!sh;
+  // Dirac notation
+  const t=terms.slice(0,16).map(({i,r,im},k)=>{
+    let c=fmtC(r,im);const sim=z(im)&&z(r);if(sim)c="("+c+")";
+    if(k>0&&!sim&&c.startsWith("−"))return" − "+c.slice(1)+ket(i,n);
+    return(k?" + ":"")+c+ket(i,n);}).join("");
+  $("#ketline").textContent="|Ψ⟩ = "+t+(terms.length>16?` + … (${terms.length-16} more terms)`:"");
+}
+
+/* ---------- log ---------- */
+function renderLog(){
+  const items=[];S.ops.slice(0,cur()).forEach((o,k)=>{
+    if(o.g==="M"){const l=o.b==="Z"?o.out:(o.b==="X"?(o.out?"|−⟩":"|+⟩"):(o.out?"|−i⟩":"|+i⟩"));
+      items.push(`<li><span>#${k+1} q${o.t} · ${o.b} basis</span><span><b>${l}</b> · p=${f3(o.p)}</span></li>`);}
+    if(o.g==="MA")items.push(`<li><span>#${k+1} all · Z basis</span><span><b>${ket(o.out,S.n)}</b> · p=${f3(o.p)}</span></li>`);
+  });
+  $("#log").innerHTML=items.length?items.reverse().join(""):`<li class="empty">No measurements yet. Each measurement collapses the state and is added to the circuit.</li>`;
+}
+
+/* ---------- render ---------- */
+function render(){
+  $("#nOut").textContent=S.n+(S.n===1?" qubit":" qubits");
+  $("#nMinus").disabled=S.n<=1;$("#nPlus").disabled=S.n>=5;
+  const c=cur();
+  $("#undo").disabled=c===0;$("#clear").disabled=!S.ops.length;
+  $("#undo").textContent=S.cursor==null?"Undo":"Remove step "+c;
+  $("#note").hidden=!S.note;if(S.note){$("#noteT").textContent=S.note.t;$("#noteB").textContent=S.note.b;}
+  refreshInitReadouts();renderCircuit();drawBlochs();renderAmps();renderLog();renderQiskit();
+}
+
+/* ---------- export to Qiskit ---------- */
+function pyA(a){const t=a/PI;
+  for(const d of[1,2,3,4,6,8,12,16]){const nn=t*d;if(Math.abs(nn-Math.round(nn))<1e-6){const n=Math.round(nn);
+    if(n===0)return"0";return(n<0?"-":"")+(Math.abs(n)===1?"":Math.abs(n)+"*")+"np.pi"+(d===1?"":"/"+d);}}
+  return(+a.toFixed(6)).toString();}
+const pyN=x=>(+x.toFixed(10)).toString();
+function renderQiskit(){
+  const n=S.n,L=["import numpy as np","from qiskit import QuantumCircuit","from qiskit.quantum_info import Statevector","",
+    "# Note: Qiskit orders qubits the other way round, so q0 is the RIGHTMOST bit in |…⟩",`qc = QuantumCircuit(${n}, ${n})`];
+  if(S.custom){const N=1<<n,a=[];
+    for(let j=0;j<N;j++){let i=0;for(let b=0;b<n;b++)if((j>>b)&1)i|=1<<(n-1-b);
+      const r=S.custom[2*i],im=S.custom[2*i+1];a.push(`${pyN(r)}${im<0?"-":"+"}${pyN(Math.abs(im))}j`);}
+    L.push(`qc.initialize([${a.join(", ")}], range(${n}))`);}
+  else for(let q=0;q<n;q++){const nm=initName(q),{th,ph}=S.init[q];
+    const P={"|1⟩":["x"],"|+⟩":["h"],"|−⟩":["x","h"],"|+i⟩":["h","s"],"|−i⟩":["h","sdg"]}[nm];
+    if(nm==="|0⟩")continue;
+    if(P)P.forEach(g=>L.push(`qc.${g}(${q})  # ${nm}`));
+    else L.push(`qc.u(${pyA(th)}, ${pyA(ph)}, 0, ${q})  # θ=${fracPi(th)}, φ=${fracPi(ph)}`);}
+  if(n&&L.length>6)L.push("qc.barrier()");
+  let meas=false;const G={Sdg:"sdg",Tdg:"tdg",SX:"sx",CX:"cx",CZ:"cz",SWAP:"swap",CCX:"ccx"};
+  for(const o of S.ops){
+    if(o.g==="M"){meas=true;const t=o.t;
+      if(o.b==="X")L.push(`qc.h(${t}); qc.measure(${t}, ${t}); qc.h(${t})  # X-basis measurement`);
+      else if(o.b==="Y")L.push(`qc.sdg(${t}); qc.h(${t}); qc.measure(${t}, ${t}); qc.h(${t}); qc.s(${t})  # Y-basis measurement`);
+      else L.push(`qc.measure(${t}, ${t})`);continue;}
+    if(o.g==="MA"){meas=true;L.push(`qc.measure(range(${n}), range(${n}))`);continue;}
+    const name=G[o.g]||o.g.toLowerCase();
+    const args=o.g==="CCX"?[o.c,o.c2,o.t]:(o.c!=null?[o.c,o.t]:[o.t]);
+    L.push(`qc.${name}(${o.a!=null?pyA(o.a)+", ":""}${args.join(", ")})`);
+  }
+  L.push("","print(qc.draw())");
+  if(!meas)L.push("print(Statevector(qc).draw('text'))");
+  else L.push("# To run it: from qiskit_aer import AerSimulator; AerSimulator().run(qc, shots=1024).result().get_counts()");
+  $("#qk").textContent=L.join("\n");
+}
+function structural(){
+  renderInits();renderSel();renderBlochCards();
+  $("#mq").innerHTML=[...Array(S.n).keys()].map(q=>`<option value="${q}">q${q}</option>`).join("");
+  const N=1<<S.n;
+  $("#custom").placeholder=S.n===2?"1/sqrt(2)\n0\n0\ni/sqrt(2)":Array.from({length:N},(_,i)=>i===0||i===N-1?"1/sqrt(2)":"0").join("\n");
+}
+
+/* ---------- events ---------- */
+function resize(n){
+  if(n<1||n>5)return;S.n=n;S.custom=null;S.cursor=null;S.note=null;
+  S.ops=S.ops.filter(o=>[o.t,o.c,o.c2].every(q=>q==null||q<n));   // keep the gates that still fit
+  structural();rebuild(true);
+}
+$("#nMinus").onclick=()=>resize(S.n-1);
+$("#nPlus").onclick=()=>resize(S.n+1);
+$("#undo").onclick=()=>{const c=cur();if(!c)return;S.ops.splice(c-1,1);if(S.cursor!=null)S.cursor=c-1;if(S.cursor>=S.ops.length)S.cursor=null;rebuild(false);};
+$("#clear").onclick=()=>{S.ops=[];S.cursor=null;S.note=null;rebuild(false);};
+$("#ex").onchange=e=>{loadExample(e.target.value);e.target.value="";};
+$("#circ").onclick=e=>{const g=e.target.closest("[data-k]");if(g)setCursor(+g.dataset.k+1);};
+$("#stFirst").onclick=()=>setCursor(0);
+$("#stPrev").onclick=()=>setCursor(cur()-1);
+$("#stNext").onclick=()=>setCursor(cur()+1);
+$("#stLast").onclick=()=>setCursor(S.ops.length);
+document.addEventListener("keydown",e=>{
+  if(e.target.closest("input,textarea,select")||e.altKey||e.ctrlKey||e.metaKey)return;
+  if(e.key==="ArrowLeft"){setCursor(cur()-1);e.preventDefault();}
+  if(e.key==="ArrowRight"){setCursor(cur()+1);e.preventDefault();}
+});
+$("#qkCopy").onclick=()=>{const b=$("#qkCopy"),t=$("#qk").textContent;
+  const sel=()=>{const r=document.createRange();r.selectNodeContents($("#qk"));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="Selected: press Ctrl+C";};
+  try{navigator.clipboard.writeText(t).then(()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy code",1500);},sel);}catch(e){sel();}
+};
+$("#measQ").onclick=()=>push({g:"M",t:+$("#mq").value,b:$("#mb").value});
+$("#measAll").onclick=()=>push({g:"MA"});
+$("#nz").onchange=renderAmps;
+$("#runShots").onclick=()=>{
+  const n=Math.max(1,Math.min(100000,Math.round(+$("#shotsN").value||1024))),N=1<<S.n;
+  const cum=new Float64Array(N);let a=0;for(let i=0;i<N;i++){a+=S.re[i]**2+S.im[i]**2;cum[i]=a;}
+  const c=new Array(N).fill(0);
+  for(let k=0;k<n;k++){const r=Math.random()*a;let lo=0,hi=N-1;while(lo<hi){const m=(lo+hi)>>1;if(cum[m]>r)hi=m;else lo=m+1;}c[lo]++;}
+  S.shots={n,c};renderAmps();
+};
+$("#loadCustom").onclick=()=>{
+  const msg=$("#customMsg"),N=1<<S.n;msg.className="msg";
+  try{
+    const parts=$("#custom").value.split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
+    if(parts.length!==N)throw`${S.n} qubit${S.n>1?"s need":" needs"} ${N} amplitudes; you entered ${parts.length}.`;
+    const v=parts.map((s,i)=>{try{return parseC(s);}catch(e){throw`Line ${i+1}: ${e}`;}});
+    const nrm=Math.sqrt(v.reduce((s,[r,i])=>s+r*r+i*i,0));if(nrm<1e-12)throw"The vector is zero.";
+    S.custom=v.flatMap(([r,i])=>[r/nrm,i/nrm]);S.ops=[];S.cursor=null;S.note=null;rebuild(true);
+    msg.textContent=Math.abs(nrm-1)>1e-6?`Loaded. Original norm ${nrm.toFixed(4)}, normalized.`:"Loaded.";
+  }catch(e){msg.className="msg err";msg.textContent=e;}
+};
+$("#dropCustom").onclick=()=>{S.custom=null;$("#customMsg").textContent="";rebuild(true);};
+
+const redraw=()=>drawBlochs();
+window.addEventListener("resize",()=>{redraw();renderCircuit();});
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",redraw);}catch(e){}
+new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+document.fonts&&document.fonts.ready.then(redraw);
+
+/* ---------- theme: system → light → dark ---------- */
+const ICON={system:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
+  light:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  dark:'<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>'};
+const NAME={system:"Theme: system",light:"Theme: light",dark:"Theme: dark"};
+const hostTheme=document.documentElement.getAttribute("data-theme");   // respect a theme set by the host page
+let mode="system";try{mode=localStorage.getItem("superpose-theme")||"system";}catch(e){}
+function setTheme(m){mode=m;const r=document.documentElement;
+  if(m==="system"){if(hostTheme)r.setAttribute("data-theme",hostTheme);else r.removeAttribute("data-theme");}else r.setAttribute("data-theme",m);
+  const b=$("#theme");b.innerHTML=ICON[m];b.title=NAME[m];b.setAttribute("aria-label",NAME[m]+". Click to change");
+  try{localStorage.setItem("superpose-theme",m);}catch(e){}
+  redraw();}
+$("#theme").onclick=()=>setTheme({system:"light",light:"dark",dark:"system"}[mode]);
+setTheme(mode);
+loadExample("bell");
+})();
+</script>
+</body>
+</html>
