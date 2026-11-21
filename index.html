@@ -277,6 +277,17 @@ a{color:inherit}
 
 /* ---------- ch04 broadcast ---------- */
 .broadcast{position:relative;overflow:hidden}
+.bc-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:5vw;align-items:start;padding-top:18px;max-width:1240px}
+.bc-block .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding-bottom:10px}
+.bc-block .tag b{color:var(--accent);font-weight:500}
+.bc-block h3{font-family:var(--display);font-weight:800;letter-spacing:-.02em;line-height:1;padding-bottom:16px}
+.bc-main h3{font-size:clamp(34px,4.4vw,58px)}
+.bc-side{border-left:1px solid var(--line);padding-left:clamp(18px,2.5vw,34px)}
+.bc-side h3{font-size:clamp(24px,2.4vw,32px)}
+.bc-side p{font-size:16px}
+.bc-grid .stats{gap:28px clamp(28px,3.5vw,56px)}
+.bc-side .stat .num{font-size:clamp(32px,3.4vw,44px)}
+@media (max-width:900px){.bc-grid{grid-template-columns:minmax(0,1fr);gap:44px}.bc-side{border-left:0;border-top:1px solid var(--line);padding-left:0;padding-top:30px}}
 .bc-rings{position:absolute;right:-12vw;top:50%;transform:translateY(-50%);width:60vw;max-width:760px;aspect-ratio:1;pointer-events:none;opacity:.5}
 .bc-rings i{position:absolute;inset:0;border:1px solid var(--wave);border-radius:50%;opacity:0}
 @media (prefers-reduced-motion:no-preference){
@@ -556,30 +567,52 @@ a{color:inherit}
 <!-- ============ 05 · BROADCAST ============ -->
 <section class="chapter broadcast" data-theme="dark" data-ch="5" id="broadcast">
   <div class="bc-rings" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-  <p class="eyebrow rv">CH.05 — Broadcast · IUMPA &amp; ProjectsMF</p>
+  <p class="eyebrow rv">CH.05 — Broadcast · ProjectsMF &amp; IUMPA</p>
   <h2 class="rv kin">Physics, amplified</h2>
   <p class="lede rv">
-    A signal only matters if someone receives it. Through institutional and independent
-    outreach, I’ve translated physics and mathematics into content for non-specialist audiences.
+    A signal only matters if someone receives it. I’ve spent years translating physics,
+    engineering and mathematics for non-specialist audiences: first and foremost through
+    our own project, and also through an institutional one.
   </p>
-  <p class="rv">
-    As a science communicator for <b>IUMPA</b> (UPV’s Institute of Pure and Applied Mathematics),
-    from November 2024 to June 2025, I produced mathematics outreach content, grew the community
-    to over <b>8,000 followers</b> and coordinated the creation and training of an outreach team.
-    Since February 2023, I’ve also run <b>ProjectsMF</b>, my independent physics and engineering
-    channel, reaching tens of thousands of views and collaborating with technology organizations.
-  </p>
-  <!-- LINKS: paste each URL inside href=""; empty ones stay hidden. Add or remove platforms as needed -->
-  <div class="linkrow rv">
-    <a href="" target="_blank" rel="noopener">ProjectsMF · Instagram ↗</a>
-    <a href="" target="_blank" rel="noopener">ProjectsMF · TikTok ↗</a>
-    <a href="" target="_blank" rel="noopener">ProjectsMF · YouTube ↗</a>
-    <a href="" target="_blank" rel="noopener">IUMPA outreach ↗</a>
-  </div>
-  <div class="stats">
-    <div class="stat rv"><div class="num"><span data-count="8000">0</span></div><div class="lbl">followers reached at IUMPA</div></div>
-    <div class="stat rv"><div class="num"><span data-count="10">0</span><span class="unit">k+</span></div><div class="lbl">views across ProjectsMF</div></div>
-    <div class="stat rv"><div class="num"><span data-count="2">0</span></div><div class="lbl">channels: institutional + independent</div></div>
+  <div class="bc-grid">
+    <div class="bc-block bc-main">
+      <p class="tag rv"><b>Main project</b> · since Feb 2023</p>
+      <h3 class="rv">ProjectsMF</h3>
+      <p class="rv">
+        Since February 2023, a friend and I have built <b>ProjectsMF</b> together as equal
+        partners: an independent physics and engineering channel and our longest-running project.
+        We turn physics and engineering into content for a general audience. Our top videos alone
+        add up to more than <b>9.5 million views</b>, our three accounts have over
+        <b>53.9k followers</b>, and we have collaborated with technology organizations.
+      </p>
+      <!-- LINKS: paste each URL inside href=""; empty ones stay hidden. Add or remove platforms as needed -->
+      <div class="linkrow rv">
+        <a href="" target="_blank" rel="noopener">Instagram ↗</a>
+        <a href="" target="_blank" rel="noopener">TikTok ↗</a>
+        <a href="" target="_blank" rel="noopener">YouTube ↗</a>
+      </div>
+      <div class="stats">
+        <div class="stat rv"><div class="num"><span data-count="9.5" data-dec="1">0</span><span class="unit">M+</span></div><div class="lbl">views on our top videos</div></div>
+        <div class="stat rv"><div class="num"><span data-count="53.9" data-dec="1">0</span><span class="unit">k+</span></div><div class="lbl">followers across three accounts</div></div>
+        <div class="stat rv"><div class="num"><span data-count="3">0</span><span class="unit">+ yrs</span></div><div class="lbl">running, since February 2023</div></div>
+      </div>
+    </div>
+    <div class="bc-block bc-side">
+      <p class="tag rv">Complementary · Nov 2024–Jun 2025</p>
+      <h3 class="rv">IUMPA</h3>
+      <p class="rv">
+        In parallel, I was a science communicator for <b>IUMPA</b>, UPV’s Institute of Pure and
+        Applied Mathematics. I produced mathematics outreach content, grew the community to over
+        <b>8,000 followers</b> and coordinated the creation and training of an outreach team.
+      </p>
+      <!-- LINKS: paste the URL inside href="" to show the button -->
+      <div class="linkrow rv">
+        <a href="" target="_blank" rel="noopener">IUMPA outreach ↗</a>
+      </div>
+      <div class="stats">
+        <div class="stat rv"><div class="num"><span data-count="8000">0</span></div><div class="lbl">followers reached at IUMPA</div></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -990,13 +1023,15 @@ a{color:inherit}
       if (!en.isIntersecting) return;
       cIO.unobserve(en.target);
       var el = en.target, target = +el.getAttribute('data-count');
-      if (reduced){ el.textContent = target.toLocaleString('en'); return; }
+      var dec = +(el.getAttribute('data-dec') || 0);
+      function fmt(v){ return v.toLocaleString('en', {minimumFractionDigits:dec, maximumFractionDigits:dec}); }
+      if (reduced){ el.textContent = fmt(target); return; }
       var t0 = null;
       function step(ts){
         if (!t0) t0 = ts;
         var p = Math.min(1, (ts-t0)/1300);
         p = 1 - Math.pow(1-p, 3);
-        el.textContent = Math.round(target*p).toLocaleString('en');
+        el.textContent = fmt(dec ? target*p : Math.round(target*p));
         if (p < 1) requestAnimationFrame(step);
       }
       requestAnimationFrame(step);
